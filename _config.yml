@@ -1,0 +1,74 @@
+#------------------------------------------------------------
+# Values for this lesson.
+#------------------------------------------------------------
+
+# Overall title for pages.
+title: "Lesson Title (using remote theme)"
+
+# Life cycle stage of the lesson
+# possible values: "pre-alpha", "alpha", "beta", "stable"
+life_cycle: "pre-alpha"
+
+#------------------------------------------------------------
+# Generic settings (should not need to change).
+#------------------------------------------------------------
+
+# What kind of thing is this ("workshop" or "lesson")?
+kind: "lesson"
+
+# Magic to make URLs resolve both locally and on GitHub.
+# See https://help.github.com/articles/repository-metadata-on-github-pages/.
+# Please don't change it: <USERNAME>/<PROJECT> is correct.
+repository: <USERNAME>/<PROJECT>
+workshop_repo: site.repository
+
+# Email address, no mailto:
+email: "dbsgtk@nus.edu.sg"
+
+cc_by_human: "https://creativecommons.org/licenses/by/4.0/"
+
+
+# Start time in minutes (0 to be clock-independent, 540 to show a start at 09:00 am).
+start_time: 0
+
+plugins:
+  - jekyll-remote-theme
+
+remote_theme: GTK-teaching/lesson-theme
+
+# Specify that things in the episodes collection should be output.
+collections:
+  episodes:
+    output: true
+    permalink: /:path/index.html
+  extras:
+    output: true
+    permalink: /:path/index.html
+
+# Set the default layout for things in the episodes collection.
+defaults:
+  - values:
+      root: .
+      layout: page
+  - scope:
+      path: ""
+      type: episodes
+    values:
+      root: ..
+      layout: episode
+  - scope:
+      path: ""
+      type: extras
+    values:
+      root: ..
+      layout: page
+
+# Files and directories that are not to be copied.
+exclude:
+  - Makefile
+  - bin/
+  - .Rproj.user/
+  - vendor
+
+# Turn on built-in syntax highlighting.
+highlighter: rouge
