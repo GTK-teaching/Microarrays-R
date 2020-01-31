@@ -1,0 +1,119 @@
+---
+title: Creating and attaching a phenoData object
+teaching: 10
+exercises: 10
+source: Rmd
+objectives:
+- Be able to use metadata from GEO objects to construct useful R data objects
+- Be able to use read.affybatch in combination with your own phenoData object to ensure data integrity
+questions:
+- "If an experiment were more complicated, and included several independent variables, would you be able to create a phenoData object from the GSE?"
+keypoints: 
+- GEO metadata can be cast into R data objects for analysis. The details are up to the user.
+- Using a proper phenoData object to describe an experiment helps to ensure reproducibility and avoid reading in files out of order
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("../bin/chunk-options.R")
+library(affy)
+load('.RData')
+library(GEOquery)
+```
+
+We have successfully read in CEL files into an AffyBatch object, but we got a warning because we didn't have any information about the experiment in a phenoData object. A phenoData object is just a description of the experiment itself. In this case, the experiment is pretty simple: the treatment conditions.  Let's see if we can find the information we need from the metadata.
+
+```{r}
+names(Meta(gse))
+```
+
+These are all the information we have in the metadata of the series. But the sample information is in the GSM, not the GSE, so let's look there. You should have a GSM object names gsm from our earlier download. If you don't have one now you can create one now with `gsm <- GSMList(gse)[[1]]`. (Remember, a GSE includes a list of GSMs.)
+
+```{r}
+names(Meta(gsm))
+```
+
+Compare the metadata for the GSE and the GSM. See how much of it is repeated?  We can find out which ones are different using a combination of `!` and `%in%`:
+
+> ## Try it!
+>
+> See if you can extract the subset of metadata that is *present* in the GSM but *not present in the GSE. These are the metadata that describe each sample, rather than the whole series.
+>
+> > ## Solution
+> >
+> > The `names()` function gives us the character vectors we want to compare. We can use `%in%` to
+> > give us a logical vector of which GSM metadata is also in GSE metadata. We then use `!` to invert
+> > the logic. The result is the metadata of GSM that is *not* in the GSE.
+> > We can then extract the values for those names.
+> >
+> > ```{r}
+> > names(Meta(gsm))[!(names(Meta(gsm)) %in% names(Meta(gse)))]
+> > Meta(gsm)[!(names(Meta(gsm)) %in% names(Meta(gse)))]
+> > ```
+> > Now we can see that a few metadata elements tell us the key information: 
+> > which samples are grown in which media. It looks like we can use 
+> > `source_name_ch1`, `growth_protocol_ch1`, or `characteristics_ch1`.
+> {: .solution}
+{: .challenge}
+
+## Getting the sample growth conditions into a data frame
+
+```{r}
+for (gsm in GSMList(gse)) { 
+  print(Meta(gsm)[['characteristics_ch1']])
+  }
+```
+
+OK, that looks right, but *printing* the results are a side effect; it doesn't get us any data. Remember how R `apply` loops work?
+
+```{r}
+culture_medium <- function(gsm) { 
+  Meta(gsm)[['characteristics_ch1']][2]
+}
+sapply(GSMList(gse),culture_medium)
+```
+
+This works a lot like a `for` loop, but returns data from a function. 
+
+Let's put it into a data frame.
+
+```{r, eval=FALSE}
+pd <- data.frame(culture=as.factor(sapply(GSMList(gse),culture_medium)))
+pd
+```
+
+```{r, results='asis', echo=FALSE}
+pd <- data.frame(culture=sapply(GSMList(gse),culture_medium))
+kable(pd)
+```
+
+The `culture` column only has two values; let's make it a bit simpler.
+
+```{r}
+pd$culture <- as.factor(pd$culture)
+levels(pd$culture) <- c("MEGM","SCGM")
+kable(pd)
+```
+
+
+## Reading in the CEL files with the phenoData
+
+Remember the risk of using `read.affybatch()`? Now that we have the data frame, let's re-run it, but use the data frame to provide the pData. This *guarantees* that the samples and the meta-data will be properly aligned.
+
+
+> ## Solution
+>
+> ```{r}
+> celfiles <- paste0('data/',rownames(pd),'.CEL.gz')
+> affydata <- read.affybatch(celfiles,phenoData = new("AnnotatedDataFrame",pd))
+> phenoData(affydata)
+> ```
+> That works, and no errors! We are good to go.
+>
+{: .solution}
+
+
+
+
+{% include site-links.md %} 
+{% include links.md %} 

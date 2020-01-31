@@ -1,0 +1,147 @@
+---
+title: "From features to annotated gene lists"
+teaching: 15
+source: Rmd
+exercises: 15
+questions: 
+- "Can you use both methods to extract annotation information?"
+- "Why might some columns not be good key types?"
+objectives:
+- "Be able to use AnnotationDb methods to association annotations with platform data." 
+
+keypoints: 
+- "BioConductor has a rich annotation infrastructure, with different data type being stored in different annotation packages."
+- "The `select()` function allows us to efficiently query annotation databases."
+- "Using `topTable()` in conjunction with `rownames()` allows us to retrieve all the probes which are differentially expressed between our experimental conditions." 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("../bin/chunk-options.R")
+library(affy)
+load('.RData')
+library(limma)
+```
+
+## Preparation
+
+To make sure we are doing things right, let's get the identifiers for 10 probesets.
+
+> ## Try it: Get a limited number of probesets
+>
+> Let's work with a limited number of probesets (say, 10) from our differential expression analysis.
+> `topTable()` gives us 10 in a data.frame, so we can easily create a character vector of the top 10
+> probesets using methods from the last episode.
+>
+> > ## Solution
+> >
+> > ```{r ps}
+> > ps <- rownames(topTable(fitted.ebayes))
+> > ps
+> > ```
+> {: .solution}
+{: .challenge} 
+
+## Annotation of genomic data in AnnotationDb
+
+Using our linear model, we have identified differentially expressed probesets between
+our two experimental condition. However, the results from `topTable()` only shows the
+probeset IDs, rather than the gene names. We need to map these
+IDs to gene symbols, which can then be further analyzed downstream. Fortunately, R has a
+wide range of *annotation packages* that allows us to do this.
+
+To do so, we will use the annotation package *hgu133plus2.db*, where *hgu133plus2* is the
+array name. Intuitively, different arrays will have different annotation packages, but
+they will all end with *.db*.
+
+> ## Different AnnotationDB packages
+>
+> Besides platform-specific annotation packages, there are
+> also sequence annotation packages (the *BSgenome* packages) as well as UCSC transcript
+> packages (the *UCSC.knownGenes* packages) and the organism annotation packages (the *org*)
+> packages. Feel free to look up the different annotation packages available on BioConductor
+> under the annotations tab.
+{: .callout}
+
+Let's take a look at what's in the package:
+
+```{r db,message=FALSE}
+library(hgu133plus2.db)
+ls('package:hgu133plus2.db')
+```
+
+This version of `ls()` allows us to quickly list the contents of any package. What we see are a
+bunch of *maps* from the hgu133plus2 probeset identifiers (which we have) to other identifiers
+(which we don't). We need to provide the probe identifiers of interest and then retrieve the other
+identifiers of interest.
+
+## Method 1: reaching into the databases
+
+Now that we have the probesets in a character vector, let's use what we have. Each of the objects in `ls('package:hgu133plus2')` is an *environment*, which is a special kind of list. The way to extract the values we want is to use the function `mget()` with the probsets as an argument. If we want the result to be a vector, we need to `unlist()` it.  Here's an example.
+
+```{r}
+## get the symbols for our probesets
+unlist(mget(ps,hgu133plus2SYMBOL))
+```
+
+This method works on all such annotation data packages, but is a bit cumbersome. Very often we want more than one piece of information, and unlisting might be dangerous if the mapping is not one-to-one.
+
+Let's try a better method.
+
+## Method 2: The AnnotationDbi interface
+
+A lot of Annotation data packages use a common interface through the AnnotationDbi package (see the [vignette][AnnotationDbi]).  There are four key functions:
+
+`select()`
+: run a query for selected columns with selected keys
+
+`columns()` 
+: identify what columns are available for a database
+
+`keytypes()`
+: some, but occasionally not all, of the columns can be used as keys for a query
+
+`keys`()
+: list the keys
+
+
+Let's first look at the available columns for our chip
+
+```{r}
+columns(hgu133plus2.db)
+```
+We have a lot of columns to choose from. How about which can be used as keys
+
+```{r}
+keytypes(hgu133plus2.db)
+```
+It looks like all the columns can be used as keys. One of the key types is "PROBEID".  That looks right.
+
+```{r}
+head(keys(hgu133plus2.db,keytype="PROBEID"))
+```
+If we want to extract the symbols, gene identifiers, and gene names, it's as simple as using the
+`select()` function from AnnotationDbi with the probesets as our identifiers:
+
+```{r}
+AnnotationDbi::select(hgu133plus2.db,ps,c("SYMBOL","ENTREZID","GENENAME"),keytype="PROBEID")
+```
+>## Try it!
+> 
+> Using the given information, use `topTable()` to retrieve all genes that are
+> differentially expressed with a adjusted p-value of less than 0.05, with at fold change of at least two (log fold change at least one). 
+> Restrict yourself to *upregulated* genes.
+> 
+> > ## Solution
+> >
+> > ```{r}
+> > ps2 <- topTable(fitted.ebayes,number=Inf,p.value = 0.05,lfc=1)
+> > ps2_up <- rownames(ps2[ps2$logFC > 0,])
+> > AnnotationDbi::select(hgu133plus2.db,ps2_up,c("SYMBOL","ENTREZID","GENENAME"),keytype="PROBEID")
+> > ```
+> {: .solution}
+{: .challenge}
+
+{% include links.md %}
+
+[AnnotationDbi]: https://bioconductor.org/packages/release/bioc/vignettes/AnnotationDbi/inst/doc/IntroToAnnotationPackages.pdf

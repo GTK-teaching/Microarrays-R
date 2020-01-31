@@ -1,0 +1,123 @@
+---
+title: Working with Bioconductor
+teaching: 10
+exercises: 10
+source: Rmd
+questions: 
+  - Why do Bioconductor packages use a different installation process than other R packages?
+  - Vignettes exist for other packages besides Bioconductor
+objectives:
+  - Become familiar with the basic Bioconductor setup.
+  - Be able to install the appropriate Bioconductor packages for microarray analysis
+  - Be able to use the help system and vignettes for Bioconductor packages
+keypoints: 
+- "Bioconductor is an archive containing a wide range of packages for bioinformatics analysis."
+- "Installation of Bioconductor packages is done using the `BiocManager::install()` function, rather than through the usual `install.packages()`"
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("../bin/chunk-options.R")
+```
+
+[Bioconductor][bioc] is an open-source project and software repository hosting a
+wide range of packages tailored for the analysis of biological data. As a repository, Bioconductor is a complement to [CRAN][CRAN], which is used for R package hosting *in general*.  Importantly,
+Bioconductor provides widely used object classes (such as the ExpressionSet class, which we
+will discuss later) for representing and manipulating genomic data, as well as data
+packages such as annotation for both microarray platforms and genomes.
+
+## Installing Bioconductor packages 
+
+Bioconductor has its own package repository, like CRAN, for its packages. In order to install packages from Bioconductor, you will first need to set up the
+Bioconductor installer on your computer. This can be done using the code described in more detail at the [Bioconductor installation page](http://www.bioconductor.org/install/), but basically this:
+
+
+```{r install, eval=FALSE}
+if (!requireNamespace("BiocManager"))
+    install.packages("BiocManager")
+BiocManager::install()
+```
+
+Notice the use of `if`. The `BiocManager` package will only be installed if it can't be loaded, because `requireNamespace()` returns a logical value depending on the success of loading the named library.  After loading the BiocManager namespace, `BiocManager::install()` installs the required Bioconductor packages. To install  an *optional* Bioconductor package named "foo", you can run `BiocManager::install('foo')` instead of `install.packages()`. 
+
+## Setting up your computer for today's lesson.
+
+For today's lesson we will be using data from GEO. There is a package in Bioconductor called GEOquery 
+
+```{r, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("GEOquery", version = "3.10")
+```
+
+You will need to install the following packages which we will be using for the rest of the practical today. Some of them may be intalled by default, so only install them if they are not available.
+
+[affy](http://bioconductor.org/packages/release/bioc/html/affy.html)
+: A package for analysing Affymetrix platform data
+
+[limma](http://bioconductor.org/packages/release/bioc/html/limma.html)
+: A package for analysing linear models of microarray data.
+
+[hgu133plus2.db](http://bioconductor.org/packages/release/data/annotation/html/hgu133plus2.db.html)
+: an annotation package for the Affymetrix microarrays of this lesson.
+
+[org.Hs.eg.db](https://bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html)
+: Annotation of the human genome
+
+Once these packages are installed, load them using `library()`. Check that these
+packages are loaded using `sessionInfo()` or `search()`.
+
+## Getting help for Bioconductor packages 
+
+### Bioconductor workflows 
+
+Some great help is available at [this page](http://bioconductor.org/packages/release/BiocViews.html#___Workflow) on Bioconductor, especially if you are unsure of how to approach a common problem.
+The site includes sample workflows for the most common analysis types, including sample code. 
+Unlike vignettes (below) which deal with specific packages, these workflows often describe multiple packages commonly used together to answer a biological question.
+
+### Package vignettes 
+
+Many, if not most, packages that are deposited on Bioconductor includes a **vignette**,
+which is a short example of how to use the package to address a given problem. The
+vignettes will also provide example code, and use self-contained datasets to demonstrate
+use of the package.
+
+To find the vignettes available for a package, type
+
+```{r, eval=FALSE}
+browseVignettes('packagename')
+```
+at the R console.
+
+> ## Find out what you can do with an object
+>
+> Bioconductor objects may seem complicated. Many of them have specific methods available, but you need to know what functions you can call on them. You can find the methods available for an object by using its *class*, via
+>
+> ```{r, eval=FALSE}
+> ## find the methods available for an object named foo
+> methods(class=class(foo))
+> ```
+{: .idea}
+
+
+### Package reference manuals
+
+This is usually a more technical document that details the usage of different functions within the
+package. Usually, this is what people refer to when they want to know the full range of
+arguments that can be passed into the function. Also, the reference manuals will include
+information about default options that are used if a particular argument is not supplied
+by the user.
+
+### Bioconductor mailing list
+
+This is a community-driven resource for help. The Bioconductor mailing list is very
+active, with people providing not just help when one runs into errors in their scripts but
+also advice on statistical tests/methods for analyzing ones data. Questions on the mailing
+list can be found at [https://support.bioconductor.org/](https://support.bioconductor.org/) Please read the posting guide
+[http://bioconductor.org/help/support/posting-guide/](http://bioconductor.org/help/support/posting-guide/) prior to posting. Users on the forum
+assume that you are very familiar with R. 
+
+
+{% include links.md %}
+{% include site-links.md %}
