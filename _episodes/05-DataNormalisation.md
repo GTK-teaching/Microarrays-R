@@ -39,7 +39,11 @@ considerably smallar than the data set prior to processing. While the starting o
 The `plotDensity` and `plotDensity.AffyBatch` functions from the `affy` package show the signal densities of data from each sample in overlaid line plots. The `plotDensity` function works on matrices, while the `plotDensity.AffyBatch` function works of AffyBatch data and log transforms the signal intensities prior to plotting.
 
 
-<img src="../fig/rmd-affy-densities-1.png" title="plot of chunk affy-densities" alt="plot of chunk affy-densities" width="612" style="display: block; margin: auto;" />
+
+~~~
+Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'indexProbes': object 'affydata' not found
+~~~
+{: .error}
 
 As you can see, each sample does look like it comes from a similar kind of distribution for all six CEL files, but the distributions clearly differ. The prcessing steps of RMA address these issues to provide estimates for each feaature (transcript).
 
@@ -72,7 +76,18 @@ The background removal step of RMA estimates and removes this second component.
 
 The *gcrma* algorithm differs from *rma* in assuming the background also depends on the GC content of the probes.
 
-<img src="../fig/rmd-bgcorrection-1.png" title="plot of chunk bgcorrection" alt="plot of chunk bgcorrection" width="612" style="display: block; margin: auto;" />
+
+~~~
+Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'exprs': object 'affydata' not found
+~~~
+{: .error}
+
+
+
+~~~
+Error in apply(mat, 2, density, na.rm = na.rm): object 'raw_nobg' not found
+~~~
+{: .error}
 
 ## The need for normalisation
 
@@ -81,7 +96,18 @@ same parent distribution.
 
  Quantile normalisation puts the data on a common empirical distribution.
 
-<img src="../fig/rmd-quantile-normalised-1.png" title="plot of chunk quantile-normalised" alt="plot of chunk quantile-normalised" width="612" style="display: block; margin: auto;" />
+
+~~~
+Error in preprocessCore::normalize.quantiles(raw_nobg): object 'raw_nobg' not found
+~~~
+{: .error}
+
+
+
+~~~
+Error in apply(mat, 2, density, na.rm = na.rm): object 'raw_normalised' not found
+~~~
+{: .error}
 
 ## Summarisation: from probe-level to feature-level data. 
 
@@ -106,11 +132,9 @@ eset <- rma(affydata)
 
 
 ~~~
-Background correcting
-Normalizing
-Calculating Expression
+Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'probeNames': object 'affydata' not found
 ~~~
-{: .output}
+{: .error}
 
 
 
@@ -119,7 +143,12 @@ plotDensity(exprs(eset),xlab='log intensity',main="feature level densities after
 ~~~
 {: .language-r}
 
-<img src="../fig/rmd-rma-1.png" title="plot of chunk rma" alt="plot of chunk rma" width="612" style="display: block; margin: auto;" />
+
+
+~~~
+Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'exprs': object 'eset' not found
+~~~
+{: .error}
 
 > ## Try it
 > If you get help on `rma()` using either `help(rma)` or `?rma`, you can see how to run
@@ -152,15 +181,9 @@ pData(eset)
 
 
 ~~~
-          culture
-GSM820817    MEGM
-GSM820818    MEGM
-GSM820819    MEGM
-GSM820820    SCGM
-GSM820821    SCGM
-GSM820822    SCGM
+Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'pData': object 'eset' not found
 ~~~
-{: .output}
+{: .error}
 
 
 You can also try, running RMA *without* background correction, or without quantile normalisation, and plot the densities.

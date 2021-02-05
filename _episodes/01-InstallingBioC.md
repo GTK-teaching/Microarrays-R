@@ -71,6 +71,19 @@ You will need to install the following packages which we will be using for the r
 Once these packages are installed, load them using `library()`. Check that these
 packages are loaded using `sessionInfo()` or `search()`.
 
+
+> ## Masking objects with `library()`
+> 
+> when you attached a package with `library()` you may have noticed a
+> bunch of messages beginning with `The following objects are masked
+> ...`. Remember, `library()` adds packages at position 2 of the
+> search path by default. This means that any time you attach a
+> package using `library()` you risk _masking_ objects of the same
+> name in other packages.
+> 
+> You can always refer to an object `foo` from package `mypackage` using its fully qualified name: `mypackage::foo`.
+{: .warning}
+
 ## Getting help for Bioconductor packages 
 
 ### Bioconductor workflows 

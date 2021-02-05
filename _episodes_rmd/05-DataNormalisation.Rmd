@@ -22,7 +22,7 @@ keypoints:
 knitr::opts_chunk$set(echo = TRUE)
 source("../bin/chunk-options.R")
 library(affy)
-load('.RData')
+#load('.RData')
 library(GEOquery)
 ```
 
