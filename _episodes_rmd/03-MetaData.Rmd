@@ -1,5 +1,5 @@
 ---
-title: Creating and attaching a phenoData object
+title: Working with experimental metadata
 teaching: 10
 exercises: 10
 source: Rmd
@@ -16,21 +16,57 @@ keypoints:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 source("../bin/chunk-options.R")
-library(affy)
+library(oligo)
 load('.RData')
 library(GEOquery)
 ```
 
-We have successfully read in CEL files into an AffyBatch object, but we got a warning because we didn't have any information about the experiment in a phenoData object. A phenoData object is just a description of the experiment itself. In this case, the experiment is pretty simple: the treatment conditions.  Let's see if we can find the information we need from the metadata.
+We have successfully read in CEL files into an R object, but we haven't provided any data about the experiment design, which would normally be provided in a phenoData object. A phenoData object is just a description of the experiment itself. In this case, the experiment is pretty simple: the two treatment conditions.  Let's see if we can find the information we need from the metadata.
 
-```{r}
-names(Meta(gse))
+> ## We have two starting points.
+>
+> 1. If you have been following this tutorial, you probably have two starting points. One is an object called `gse` which is a list of ExpressionSet objects. That list has length 1, so the first element of the list, `gse[[1]]`, is an ExpressionSet object. 
+>
+> 2. You may also have another object, called `gse2`, from `gse2<-
+> getGEO('GSE33146',GSEMatrix=FALSE))`, that does not have an
+> ExpressionSet object. The result of that operation is a `GSE`
+> object; it contains a list of samples a list of platforms, and
+> associated MetaData.
+{: .callout}
+
+## The simple case: an `ExpressionSet` object
+
+In the simple case, we already have an ExpressionSet object, and we can use the pData from it.  I'm going to use some _functional programming_ ideas to get the CEL file name from  the supplementary file column.
+
+```{r tidycleaning, message=FALSE}
+library(tidyverse)
+pd <- pData(gse[[1]])[,c("supplementary_file","culture medium:ch1")]
+pd['cel_file'] <- str_split(pd$supplementary_file,"/") %>% map_chr(tail,1)
+pd
 ```
 
-These are all the information we have in the metadata of the series. But the sample information is in the GSM, not the GSE, so let's look there. You should have a GSM object names gsm from our earlier download. If you don't have one now you can create one now with `gsm <- GSMList(gse)[[1]]`. (Remember, a GSE includes a list of GSMs.)
+With this simple trick, we now can re-read out CEL files, and _guarantee_ that they are in the correct order as the experimental data we have from getGEO.
+
+```{r, message=FALSE}
+celfile_data <- read.celfiles(paste0('data/',pd$cel_file),phenoData=phenoData(gse[[1]]))
+```
+We get a warning because some extra information about detection channels is added, but no matter: we have already gotten the treatment conditions attached to our data!
 
 ```{r}
-names(Meta(gsm))
+celfile_data[['culture medium:ch1']]
+```
+
+## The more convoluted case: a `GSE` object
+
+Our GSE object doesn't have an ExpressionSet object in it, so we have to think a bit more about how to get what metadata we need into our eventual pData object. Let's as first what metadata we _have_.
+
+```{r}
+names(Meta(gse2))
+```
+These are all the information we have in the metadata of the _series_. But the sample information is in each GSM object not the GSE itself, so let's look there. Since we have a list of samples in `GSMList`, we can look there. 
+
+```{r}
+names(Meta(GSMList(gse2)[[1]]))
 ```
 
 Compare the metadata for the GSE and the GSM. See how much of it is repeated?  We can find out which ones are different using a combination of `!` and `%in%`:
@@ -47,8 +83,9 @@ Compare the metadata for the GSE and the GSM. See how much of it is repeated?  W
 > > We can then extract the values for those names.
 > >
 > > ```{r}
-> > names(Meta(gsm))[!(names(Meta(gsm)) %in% names(Meta(gse)))]
-> > Meta(gsm)[!(names(Meta(gsm)) %in% names(Meta(gse)))]
+> > gsm <- GSMList(gse2)[[1]]
+> > names(Meta(gsm))[!(names(Meta(gsm)) %in% names(Meta(gse2)))]
+> > Meta(gsm)[!(names(Meta(gsm)) %in% names(Meta(gse2)))]
 > > ```
 > > Now we can see that a few metadata elements tell us the key information: 
 > > which samples are grown in which media. It looks like we can use 
@@ -59,7 +96,7 @@ Compare the metadata for the GSE and the GSM. See how much of it is repeated?  W
 ## Getting the sample growth conditions into a data frame
 
 ```{r}
-for (gsm in GSMList(gse)) { 
+for (gsm in GSMList(gse2)) { 
   print(Meta(gsm)[['characteristics_ch1']])
   }
 ```
@@ -70,20 +107,19 @@ OK, that looks right, but *printing* the results are a side effect; it doesn't g
 culture_medium <- function(gsm) { 
   Meta(gsm)[['characteristics_ch1']][2]
 }
-sapply(GSMList(gse),culture_medium)
+sapply(GSMList(gse2),culture_medium)
 ```
 
 This works a lot like a `for` loop, but returns data from a function. 
 
-Let's put it into a data frame.
+Let's put it into a data frame. This will use the names of the samples (the names of `GSMList(gse2)`) as the row.names.
 
-```{r, eval=FALSE}
-pd <- data.frame(culture=as.factor(sapply(GSMList(gse),culture_medium)))
-pd
+```{r}
+pd <- data.frame(culture=as.factor(sapply(GSMList(gse2),culture_medium)))
 ```
 
 ```{r, results='asis', echo=FALSE}
-pd <- data.frame(culture=sapply(GSMList(gse),culture_medium))
+pd <- data.frame(culture=sapply(GSMList(gse2),culture_medium))
 kable(pd)
 ```
 
@@ -92,21 +128,21 @@ The `culture` column only has two values; let's make it a bit simpler.
 ```{r}
 pd$culture <- as.factor(pd$culture)
 levels(pd$culture) <- c("MEGM","SCGM")
+```
+
+```{r, echo=FALSE}
 kable(pd)
 ```
 
 
 ## Reading in the CEL files with the phenoData
 
-Remember the risk of using `read.affybatch()`? Now that we have the data frame, let's re-run it, but use the data frame to provide the pData. This *guarantees* that the samples and the meta-data will be properly aligned.
-
-
 > ## Solution
 >
 > ```{r}
 > celfiles <- paste0('data/',rownames(pd),'.CEL.gz')
-> affydata <- read.affybatch(celfiles,phenoData = new("AnnotatedDataFrame",pd))
-> phenoData(affydata)
+> affydata <- read.celfiles(celfiles,phenoData = new("AnnotatedDataFrame",pd))
+> pData(affydata)
 > ```
 > That works, and no errors! We are good to go.
 >

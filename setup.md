@@ -1,7 +1,9 @@
 ---
 title: Setup
 ---
-FIXME
+
+- Download the files provided on LumiNUS
+
 
 
 {% include links.md %}

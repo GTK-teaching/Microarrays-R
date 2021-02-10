@@ -56,6 +56,9 @@ You will need to install the following packages which we will be using for the r
 [affy](http://bioconductor.org/packages/release/bioc/html/affy.html)
 : A package for analysing Affymetrix platform data
 
+[oligo](http://bioconductor.org/packages/release/bioc/html/oligo.html)
+: A different package for analysing oligonucleotide platform data, including Affymetrix data
+
 [limma](http://bioconductor.org/packages/release/bioc/html/limma.html)
 : A package for analysing linear models of microarray data.
 
