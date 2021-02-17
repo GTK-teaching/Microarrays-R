@@ -48,7 +48,7 @@ For today's lesson we will be using data from GEO. There is a package in Biocond
 ```{r, eval=FALSE}
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install("GEOquery", version = "3.10")
+BiocManager::install("GEOquery")
 ```
 
 You will need to install the following packages which we will be using for the rest of the practical today. Some of them may be intalled by default, so only install them if they are not available.
@@ -134,6 +134,8 @@ list can be found at [https://support.bioconductor.org/](https://support.biocond
 [http://bioconductor.org/help/support/posting-guide/](http://bioconductor.org/help/support/posting-guide/) prior to posting. Users on the forum
 assume that you are very familiar with R. 
 
-
+```{r closeout, include=FALSE}
+save(.First,file=".01-RData")
+```
 {% include links.md %}
 {% include site-links.md %}

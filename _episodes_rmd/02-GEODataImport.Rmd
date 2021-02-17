@@ -1,18 +1,17 @@
 ---
-title: Importing raw microarray data into R (affy package)
-teaching: 0
-exercises: 0
+title: Importing processed microarray data into R from GEO 
+teaching: 10
+exercises: 10
 source: Rmd
 questions:
-  - "Can you think of how you might read the CEL files in an order that is guaranteed to match the  desired order?"
   - "Can you describe the practical differences between GSM, GSE, and GDS data in GEO?"
+  - "Under what circumstances might you want to use `GSEMatrix=FALSE`?"
 objectives:
 - Be able to obtain data from GEO, including processed and raw data.
 - Be able to explain and use the differences between GEO data types.
 - Understand the concept of the ExpressionSet class of objects.
 keypoints: 
 - GEO data types have enough similarities to allow data access, but enough differences to require specific type-specific steps.
-- The function `read.affybatch()` is used to import raw CEL files into R for normalisation
   and analysis.
 - The ExpressionSet class of object contains slots for different information associated
   with a microarray experiment. 
@@ -21,21 +20,22 @@ keypoints:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 source("../bin/chunk-options.R")
-if(file.exists('.RData')) { load('.RData') } 
+.starting_image <- ".01-RData"
+.starting_static <- ".02-static-RData"
+.closing_image <- ".02-RData"
+if(file.exists(.starting_image)) {
+    load(.starting_image)
+    }
+if(file.exists(.starting_static)) {
+    load(.starting_static)
+    }
 library(GEOquery)
 ```
 
-
->> ## I recommend skipping this and going to the oligo package walkthrough.
->>
->> We used this walkthrough in the practical. However, on further consideration, I think there are advantages to the "oligo" package instead of the "affy" package. They are almost exactly the same, 
-{: .callout}
-
 In the class, we learned how the basic requirements of a complete data object for gene expression
-microaray studies consists of a tall, skinny matrix (for the experimental measurements) and a
+microarray studies consists of a tall, skinny matrix (for the experimental measurements) and a
 short, wide table (to describe the experiment). The Bioconductor class for this type of data is an
-`ExpressionSet`. For raw data from a platform such as Affymetrix, there are specific classes that
-resemble ExpressionSet classes. In the case of Affymetrix, the class is `AffyBatch`.
+`ExpressionSet`. 
 
 In this lesson we will be creating these objects in R from data available at GEO.
 
@@ -58,19 +58,19 @@ annotation
 
 ![The ExpressionSet object](../fig/ExpressionSet.png)
 
-> ## The data set
+> ## The first data set
 > 
 > Data for this lesson is taken from GEO (accession ID: [GSE33146][GSE33146]).
 > The experiment was on a cancer cell line grown in culture.
 > Cells are grown in either MEGM (where they retain an epithelial phenotype) or SCGM
 > (where they undergo reversible epithelial-mesencymal transition, or EMT). Gene 
-> expression analysis using the [HG-U133_plus2][u133plus2] microarray was performed to identify genes
+> expression analysis using the [hgu133plus2][hgu133plus2] microarray was performed to identify genes
 > associated with the EMT process.
 {: .callout}
 
 ## Getting processed data from GEO into R
 
-Before any analysis, we need to get the raw data into R. If you navigate to [GSE33146][GSE33146], you will see that several different file formats are available for download. We are looking for the supplemental files (the `.CEL` files) as well as some description of the experiment. 
+Before any analysis, we need to get the data into R. If you navigate to [GSE33146][GSE33146], you will see that several different file formats are available for download. 
 
 > ## The GEO file types
 >
@@ -109,11 +109,9 @@ GEOquery works for different kinds of GEO data, including Samples (GSM), platfor
 
 We can create a single GSM object with a call to getGEO (I'm using an example from the same GSE).
 
-Note that setting GSEMatrix=FALSE will parse the SOFT file rather than the (potentially faster, but possibly error-prone) attempt to read the GSE matrix as an object.
-
 ```{r, eval=FALSE}
 library(GEOquery)
-gsm <- getGEO('GSM820817',GSEMatrix=FALSE)
+gsm <- getGEO('GSM820817')
 ```
 
 ```{r}
@@ -142,11 +140,27 @@ As you can see, the `Table` method returns numeric estimates for each probe (whi
 >
 {: .challenge}
 
-### Retrieving the whole GSE 
+
+## Retrieving the whole GSE as a list of ExpressionSets
+
+The function `getGEO()` with a GSE identifier as a sole argument will download the series matrix files from GEO and return them as a list of ExpressionSet objects. In many cases, there will only be one experiment for a series, so the list will contain a single ExpressionSet, which can be retrieved as the first member of the list.
+
+```{r getGEO, eval=FALSE}
+library(GEOquery)
+gse33146 <- getGEO('GSE33146')
+```
+```{r GSE props}
+length(gse33146)
+class(gse33146[[1]])
+```
+
+### Retrieving the whole GSE by parsing the SOFT file
+
+When `getGEO()` is run with the named argument `GSEMatrix=FALSE`, it does not parse the Series Matrix files but does parse the SOFT files. The advantage of this method is that the SOFT files may contain more information than the series matrix files, but a disadvantage is that it is much slower and the resulting object is _not_ a list of ExpressionSets. However, parsing the Series Matrix can also introduce errors; parsing the SOFT file is less error-prone.
 
 The GSE is the most complicated object retrieved by getGEO, because a series is composed of sample (GSM) and platform (GPL) objects.  Each is accessed by a *list*: `GSMList` and `GPLList`. You can download the whole series into an R object by accession, but you can also download the file outside of R and read it in as a local file.
 
-```{r}
+```{r noGSEMatrix}
 library(GEOquery)
 ## if we have a good connection to the internet, we can download it directly from GEO
 ## gse2 <- getGEO('GSE33146',GSEMatrix=FALSE)
@@ -164,78 +178,27 @@ names(GSMList(gse2))
 > platforms, and an ExpressionSet object is data from one platform.
 {: .callout} 
 
-
-## Getting the raw data for the series using GEOquery
-
-Getting the raw data (`CEL` files for Affymetrix data) is a bit more complicated. The `CEL` files can be pretty large, and sometimes the download can fail, even with a good connection.
-
-Nonetheless, if you want to do it, `getGEOSuppFiles()` will download all the
-supplementary files for the GEO accession. Note that it doesn't *process* or even *parse* the files,
-since there are many different types of supplementary files on GEO and R doesn't know the format ahead
-of time. It does, however, return the file paths.
-
-```{r, eval=FALSE}
-## If you have an awesome connection and a lot of time
-filePaths <- getGEOSuppFiles('GSE33146')
-```
-
-In the interest of time, don't do that. Instead, use the files you have downloaded from IVLE and
-unpacked into the `data` directory. You can leave them compressed.
+![The two ways of getting a GSE](../fig/getGEO.png)
 
 
-## Reading CEL data using the `affy` package.
-
-The `affy` package provides functions for handling Affymetrix data, including CEL file data. The function `read.affybatch()` does the work. This function takes in a vector of filenames as the
-argument. We can manually type the file names into a vector, using the `c()` function.
-Alternatively, we can use `list.celfiles()` command provided by `affy`.
-`list.celfiles()` will list all the files ending with the *.cel* extension (CEL files) in
-the present working directory.
-
-Therefore, the following needs to be done: 
-
-1. Use `list.celfiles('data')` to generate a vector containing the name of all the CEL files.
-2. Use `read.affybatch()` to read in the CEL files.
-
-> ## Try it! 
+> ## Get the second data set
 >
-> Try to read the CEL files into R using the information provided above. 
->
->
-> *Hint:* If your CEL files are in the 'data' directory, each of your files needs to begin with
-> 'data/'.  Try using `paste0()` to create the correct character vector.
+> Our second data set contains 12 samples, and is found in [GSE66417][GSE66417]. Retrieve the processed data into an ExpressionSet object.
 >
 > > ## Solution
 > >
-> > ```{r, eval=TRUE}
-> > library(affy)
-> > data <- read.affybatch(paste0('data/',list.celfiles('data')))
+> > ```{r gse66417, eval=FALSE}
+> > gse66417 <- getGEO('GSE66417') 
+> > length(gse66417) # this should be a list of length 1
+> > gse66417 <- gse66417[[1]]
 > > ```
-> >
 > {: .solution}
+>
 {: .challenge}
 
-### AffyBatch
-
-The AffyBatch class, which is the class of object that we get following
-`read.affybatch()`, builds on (i.e., extends) the eSet class as it contains the CDF
-information which is required in order for RMA normalisation to be done.
-
-If you want to see what a CEL file looks like (a pseudo-image of the chip itself) you can look at it with `image`
-
-```{r, celfile-image}
-image(data[,1])
+```{r closeout, include=FALSE}
+save(list=ls(),file=.closing_image)
 ```
 
-
-
-> ## The risk of using  `list.celfiles()`
->
-> Using `list.celfiles()` to provide the files to `read.affybatch()` can be risky.
-> `list.celfiles()` provides a list of files in lexicographic order. This is *probably* the same
-> order as the files in your GSE, but can you be sure? Ultimately, you need to use the metadata
-> from the series to ensure that the rows of the phenoData match the columns of the assayData
-{: .warning}
-
-	
 {% include site-links.md %} 
 {% include links.md %} 

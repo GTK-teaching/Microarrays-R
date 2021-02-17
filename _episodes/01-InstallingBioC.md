@@ -50,7 +50,7 @@ For today's lesson we will be using data from GEO. There is a package in Biocond
 ~~~
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install("GEOquery", version = "3.10")
+BiocManager::install("GEOquery")
 ~~~
 {: .language-r}
 

@@ -1,0 +1,87 @@
+---
+title:  "Identifying differentially expressed genes using linear models (part 2, factorial designs)"
+source: Rmd
+teaching: 20
+exercises: 20
+questions:
+  - "How do we identify genes that are differentially expressed in a statistically rigorous manner?"
+objectives:
+  - "Be able to use `limma` to identify differentially expressed genes."
+  - "Understand the formula class of objects in R, and use it to specify the appropriate model for linear modeling." 
+keypoints:
+  - "The `formula` class of objects in R enables us to represent a wide range of models to identify differentially expressed genes."
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("../bin/chunk-options.R")
+library(oligo)
+library(limma)
+library(pd.hugene.2.0.st)
+library(pd.hg.u133.plus.2)
+.starting_image <- ".05-RData"
+.closing_image <- ".06-RData"
+if(file.exists(.starting_image)) {
+    load(.starting_image)
+    }
+```
+
+## Experimental designs with more than one covariate
+
+GSE66417 is an example of a _factorial_ experimental design, in which two covariates are varied in a single experiment. In this case, the cell type is (Lymphoma or CTL cells) and the treatment is varied (control or Ixozamib). This is called a 2x2 factorial design.
+
+In order to model the expression of each gene, we can model the _group_ mean expression under each condition. We have four conditions, so the model is something like
+
+$$
+Y = \beta_1 X_1 + \beta_2 X_2 + \beta_3 X_3 + \beta_4 X_4 + \epsilon
+$$
+
+where each value $\beta$ represents a particular condition. We would like to identify genes where othe contrasts represent changes between different groups, i.e., the effect of drug treatment in each cell type. In order to do that, we need to specify contrasts explicitly.  One way to do this is to create a "dummy" variable that represents the four groups.
+
+```{r, message=FALSE}
+library(dplyr)
+pd <- pData(gse66417_eset)
+pd <- rename(pd,cell_type="cell type:ch1",treatment="treatment:ch1")
+pd$treatment <- as.factor(pd$treatment)
+levels(pd$treatment) <- c("Ixazomib","Control")
+pd$group <- as.factor(paste(pd$cell_type,pd$treatment))
+levels(pd$group) <- c("Hodgkins.Control","Hodgkins.Ixazomib","TCL.Control","TCL.Ixazomib")
+```
+
+```{r echo=FALSE}
+kable(pd[c("cell_type","treatment","group")])
+```
+
+Now we can create a design representing the different groups
+
+```{r}
+design <- model.matrix(~ 0 + pd$group)
+colnames(design) <- levels(pd$group)
+design
+```
+
+Our contrasts can be formed by the usual `makeContrasts()` function, but we can easily specify five contrasts that might be interesting.
+
+```{r run contrasts}
+contrasts_matrix <- makeContrasts(drug_in_hodgkins=Hodgkins.Ixazomib - Hodgkins.Control,
+              drug_in_TCL=TCL.Ixazomib - TCL.Control,
+              cell_in_control=Hodgkins.Control - TCL.Control,
+              cell_w_drug=Hodgkins.Ixazomib - TCL.Ixazomib,
+              interaction=(Hodgkins.Control - TCL.Control) - (Hodgkins.Ixazomib - TCL.Ixazomib),
+              levels=design)
+```
+
+```{r}
+kable(contrasts_matrix)
+```
+
+Now we can run the fit as usual
+
+```{r}
+gse66417_fit <- lmFit(gse66417_eset,design)
+gse66417_fit2 <- contrasts.fit(gse66417_fit,contrasts=contrasts_matrix)
+gse66417_fit2 <- eBayes(gse66417_fit2)
+summary(decideTests(gse66417_fit2,lfc=1))
+```
+
+

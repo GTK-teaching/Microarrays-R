@@ -18,9 +18,14 @@ keypoints:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 source("../bin/chunk-options.R")
-library(affy)
-load('.RData')
+.starting_image <- ".06-RData"
+.closing_image <- ".07-RData"
+if(file.exists(.starting_image)) {
+    load(.starting_image)
+    }
 library(limma)
+library(pd.hg.u133.plus.2)
+library(oligo)
 ```
 
 ## Preparation
@@ -137,7 +142,8 @@ AnnotationDbi::select(hgu133plus2.db,ps,c("SYMBOL","ENTREZID","GENENAME"),keytyp
 > > ```{r}
 > > ps2 <- topTable(fitted.ebayes,number=Inf,p.value = 0.05,lfc=1)
 > > ps2_up <- rownames(ps2[ps2$logFC > 0,])
-> > AnnotationDbi::select(hgu133plus2.db,ps2_up,c("SYMBOL","ENTREZID","GENENAME"),keytype="PROBEID")
+> > df <- AnnotationDbi::select(hgu133plus2.db,ps2_up,c("SYMBOL","ENTREZID","GENENAME"),keytype="PROBEID")
+> > dplyr::mutate(df,GENENAME=stringr::str_trunc(GENENAME,30))
 > > ```
 > {: .solution}
 {: .challenge}

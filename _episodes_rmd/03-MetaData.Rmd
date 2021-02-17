@@ -1,155 +1,110 @@
 ---
 title: Working with experimental metadata
 teaching: 10
-exercises: 10
+exercises: 5
 source: Rmd
 objectives:
 - Be able to use metadata from GEO objects to construct useful R data objects
-- Be able to use read.affybatch in combination with your own phenoData object to ensure data integrity
+- Be able to use read.celfiles in combination with your own pData object to ensure data integrity
 questions:
 - "If an experiment were more complicated, and included several independent variables, would you be able to create a phenoData object from the GSE?"
 keypoints: 
 - GEO metadata can be cast into R data objects for analysis. The details are up to the user.
-- Using a proper phenoData object to describe an experiment helps to ensure reproducibility and avoid reading in files out of order
+- Using proper phenoData to describe an experiment helps to ensure reproducibility and avoid reading in files out of order
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 source("../bin/chunk-options.R")
 library(oligo)
-load('.RData')
 library(GEOquery)
+.starting_image <- ".02-supplemental-RData"
+.closing_image <- ".03-RData"
+if(file.exists(.starting_image)) {
+    load(.starting_image,verbose=TRUE)
+    }
+
+if (class(gse33146) == "list") {
+    gse33146 <- gse33146[[1]]
+}
 ```
 
-We have successfully read in CEL files into an R object, but we haven't provided any data about the experiment design, which would normally be provided in a phenoData object. A phenoData object is just a description of the experiment itself. In this case, the experiment is pretty simple: the two treatment conditions.  Let's see if we can find the information we need from the metadata.
+We have successfully read CEL files into an R object, but we
+haven't provided any information about the experimental design, which would
+normally be provided in a phenoData object.  In the case of our two
+experiments, the experimental designs are pretty simple. Let's see if
+we can find the information we need from the metadata.
 
-> ## We have two starting points.
+## What you should have
+
+If you have been following this tutorial, you should have the following objects:
+
+- An _ExpressionSet_ object for GSE33146 (the processed data). Let's assume this is called `gse33146`.
+- An _ExpressionSet_ object for GSE66417  (the processed data). Let's assume this is called `gse66417`.
+- An _ExpressionFeatureSet_ object for GSE33146 (the raw data). Let's assume this is called `gse33146_celdata`. 
+- A _GeneFeatureSet_ object for GSE66417 (the raw data). Let's assume this is called `gse66417_celdata`. 
+ 
+> ## Why do the raw data for the two experiments appear to be different classes? 
 >
-> 1. If you have been following this tutorial, you probably have two starting points. One is an object called `gse` which is a list of ExpressionSet objects. That list has length 1, so the first element of the list, `gse[[1]]`, is an ExpressionSet object. 
->
-> 2. You may also have another object, called `gse2`, from `gse2<-
-> getGEO('GSE33146',GSEMatrix=FALSE))`, that does not have an
-> ExpressionSet object. The result of that operation is a `GSE`
-> object; it contains a list of samples a list of platforms, and
-> associated MetaData.
+> The GSE33146 raw data is of class ExpressionFeatureSet, but the
+> GSE66417 data is of class GeneFeatureSet. Raw Affymetrix data is all
+> some form of "FeatureSet" data, but different array designs are
+> _extensions_ of the abstract FeatureSet class. The first series is
+> from a 3′-biased array design, and the second is from a gene-based
+> design. The classes represent those different design types.
 {: .callout}
 
-## The simple case: an `ExpressionSet` object
+## GSE33146
 
-In the simple case, we already have an ExpressionSet object, and we can use the pData from it.  I'm going to use some _functional programming_ ideas to get the CEL file name from  the supplementary file column.
+In the simple case, we already have an ExpressionSet object, and we can use the pData from it. 
 
 ```{r tidycleaning, message=FALSE}
 library(tidyverse)
-pd <- pData(gse[[1]])[,c("supplementary_file","culture medium:ch1")]
+varLabels(gse33146)
+# It looks like the variables of interest are "cell line:ch1" and "treatment:ch1", and the sample accessions are in "geo_accession"
+gse33146$supplementary_file
+pd <- pData(gse33146)
 pd['cel_file'] <- str_split(pd$supplementary_file,"/") %>% map_chr(tail,1)
-pd
 ```
 
 With this simple trick, we now can re-read out CEL files, and _guarantee_ that they are in the correct order as the experimental data we have from getGEO.
 
 ```{r, message=FALSE}
-celfile_data <- read.celfiles(paste0('data/',pd$cel_file),phenoData=phenoData(gse[[1]]))
+gse33146_celdata <- read.celfiles(paste0('GSE33146/',pd$cel_file),phenoData=phenoData(gse33146))
 ```
 We get a warning because some extra information about detection channels is added, but no matter: we have already gotten the treatment conditions attached to our data!
 
 ```{r}
-celfile_data[['culture medium:ch1']]
+pData(gse33146_celdata)[,c("geo_accession","cell line:ch1","culture medium:ch1")]
 ```
 
-## The more convoluted case: a `GSE` object
+## GSE66417
 
-Our GSE object doesn't have an ExpressionSet object in it, so we have to think a bit more about how to get what metadata we need into our eventual pData object. Let's as first what metadata we _have_.
+We can do the same thing with our second data set, but we can see that the experimental  layout is more complicated
+
+```{r tidycleaning2, message=FALSE}
+library(tidyverse)
+varLabels(gse66417)
+# It looks like the variables of interest are "cell type:ch1" and "treatment:ch1", and the sample accessions are in "geo_accession"
+pd <- pData(gse66417)
+pd['cel_file'] <- str_split(pd$supplementary_file,"/") %>% map_chr(tail,1)
+```
+
+We can repeat our simple trick to guarantee our cel files and our metadata are aligned.
+
+```{r, message=FALSE}
+gse66417_celdata <- read.celfiles(paste0('GSE66417/',pd$cel_file),phenoData=phenoData(gse66417))
+```
 
 ```{r}
-names(Meta(gse2))
+pData(gse66417_celdata)[,c("geo_accession","cell type:ch1","treatment:ch1")]
 ```
-These are all the information we have in the metadata of the _series_. But the sample information is in each GSM object not the GSE itself, so let's look there. Since we have a list of samples in `GSMList`, we can look there. 
+In this experiment, two coviariates are modified: cell type and treatment!
 
-```{r}
-names(Meta(GSMList(gse2)[[1]]))
+```{r closeout, eval=TRUE,include=FALSE}
+save(list=ls(),file=.closing_image)
+Sys.sleep(1)
 ```
-
-Compare the metadata for the GSE and the GSM. See how much of it is repeated?  We can find out which ones are different using a combination of `!` and `%in%`:
-
-> ## Try it!
->
-> See if you can extract the subset of metadata that is *present* in the GSM but *not present in the GSE. These are the metadata that describe each sample, rather than the whole series.
->
-> > ## Solution
-> >
-> > The `names()` function gives us the character vectors we want to compare. We can use `%in%` to
-> > give us a logical vector of which GSM metadata is also in GSE metadata. We then use `!` to invert
-> > the logic. The result is the metadata of GSM that is *not* in the GSE.
-> > We can then extract the values for those names.
-> >
-> > ```{r}
-> > gsm <- GSMList(gse2)[[1]]
-> > names(Meta(gsm))[!(names(Meta(gsm)) %in% names(Meta(gse2)))]
-> > Meta(gsm)[!(names(Meta(gsm)) %in% names(Meta(gse2)))]
-> > ```
-> > Now we can see that a few metadata elements tell us the key information: 
-> > which samples are grown in which media. It looks like we can use 
-> > `source_name_ch1`, `growth_protocol_ch1`, or `characteristics_ch1`.
-> {: .solution}
-{: .challenge}
-
-## Getting the sample growth conditions into a data frame
-
-```{r}
-for (gsm in GSMList(gse2)) { 
-  print(Meta(gsm)[['characteristics_ch1']])
-  }
-```
-
-OK, that looks right, but *printing* the results are a side effect; it doesn't get us any data. Remember how R `apply` loops work?
-
-```{r}
-culture_medium <- function(gsm) { 
-  Meta(gsm)[['characteristics_ch1']][2]
-}
-sapply(GSMList(gse2),culture_medium)
-```
-
-This works a lot like a `for` loop, but returns data from a function. 
-
-Let's put it into a data frame. This will use the names of the samples (the names of `GSMList(gse2)`) as the row.names.
-
-```{r}
-pd <- data.frame(culture=as.factor(sapply(GSMList(gse2),culture_medium)))
-```
-
-```{r, results='asis', echo=FALSE}
-pd <- data.frame(culture=sapply(GSMList(gse2),culture_medium))
-kable(pd)
-```
-
-The `culture` column only has two values; let's make it a bit simpler.
-
-```{r}
-pd$culture <- as.factor(pd$culture)
-levels(pd$culture) <- c("MEGM","SCGM")
-```
-
-```{r, echo=FALSE}
-kable(pd)
-```
-
-
-## Reading in the CEL files with the phenoData
-
-> ## Solution
->
-> ```{r}
-> celfiles <- paste0('data/',rownames(pd),'.CEL.gz')
-> affydata <- read.celfiles(celfiles,phenoData = new("AnnotatedDataFrame",pd))
-> pData(affydata)
-> ```
-> That works, and no errors! We are good to go.
->
-{: .solution}
-
-
-
 
 {% include site-links.md %} 
 {% include links.md %} 

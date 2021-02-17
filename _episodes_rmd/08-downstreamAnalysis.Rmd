@@ -19,9 +19,14 @@ keypoints:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 source("../bin/chunk-options.R")
-library(affy)
-load('.RData')
+.starting_image <- ".06-RData"
+.closing_image <- ".07-RData"
+if(file.exists(.starting_image)) {
+    load(.starting_image)
+    }
 library(limma)
+library(pd.hg.u133.plus.2)
+library(oligo)
 ```
 
 ## Downstream analysis of microarray data
@@ -33,17 +38,18 @@ So far in our analysis, we have obtained a list of differentially expressed gene
 
 A volcano plot is a helpful visualization that shows the log fold-change versus the negative log p-value. Usually, we will expect that genes larger absolute fold changes will have larger negative log p-values and hence implying greater statistical confidence. 
 
-A volcano plot of a fitted model is as simples as
 
 ```{r}
-volcanoplot(fitted.ebayes)
+volcanoplot(fitted.ebayes,coef=2)
 ```
 
-But we can use some R features to highlight the points with cutoffs of interest. Let's decide the interesting genes are those with $$|\log_2(\text{fold change})| \ge 2$$ and adjusted $$p < 0.05$$, thus:
+But we can use some R features to highlight the points with cutoffs of
+interest. Let's decide the interesting genes are those with
+\\(|\log_2(\text{fold change})| \ge 2\\) and adjusted \\(p < 0.05\\), thus:
 
 ```{r}
 interesting_genes <- topTable(fitted.ebayes,number=Inf,p.value = 0.05,lfc=2)
-volcanoplot(fitted.ebayes, main=sprintf("%d features pass our cutoffs",nrow(interesting_genes)))
+volcanoplot(fitted.ebayes, coef=2, main=sprintf("%d features pass our cutoffs",nrow(interesting_genes)))
 points(interesting_genes[['logFC']],-log10(interesting_genes[['P.Value']]),col='red')
 ```
 
@@ -72,7 +78,7 @@ For simplicity, we will visualize the expression of features that pass our cutof
 Let's use the genes that passed our previous cutoffs and create a dataset of just those genes
 
 ```{r}
-eset_of_interest <- eset[rownames(interesting_genes),]
+eset_of_interest <- gse33146_eset[rownames(interesting_genes),]
 heatmap(exprs(eset_of_interest))
 ```
 
@@ -83,9 +89,8 @@ We can make a few changes to fix and beautify the  heatmap. The most useful is t
 
 ```{r}
 library(RColorBrewer)
-eset_of_interest <- eset[rownames(interesting_genes),]
 heatmap(exprs(eset_of_interest),
-        labCol=eset$culture,labRow=NA,
+        labCol=gse33146_eset[['culture medium:ch1']] ,labRow=NA,
         col       = rev(brewer.pal(10, "RdBu")),
         distfun   = function(x) as.dist(1-cor(t(x))))
 ```

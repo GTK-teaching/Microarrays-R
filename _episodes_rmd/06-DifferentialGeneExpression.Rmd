@@ -1,5 +1,5 @@
 ---
-title: "Identifying differentially expressed genes using linear models"
+title: "Identifying differentially expressed genes using linear models (part 1)"
 source: Rmd
 teaching: 20
 exercises: 20
@@ -15,10 +15,19 @@ keypoints:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 source("../bin/chunk-options.R")
-library(affy)
-load('.RData')
-library(GEOquery)
+library(oligo)
+library(pd.hugene.2.0.st)
+library(pd.hg.u133.plus.2)
+.starting_image <- ".05-RData"
+.closing_image <- ".06-RData"
+if(file.exists(.starting_image)) {
+    load(.starting_image)
+    }
 ```
+
+## What you should have
+
+At this point, you should have two fully processed ExpressionSet objects. We will use the first one (GSE33146) in this lesson.
 
 ## The formula class of objects 
 
@@ -35,60 +44,101 @@ convenient to remove the intercept term when doing differential gene expression 
 In a transcriptomics experiment, whether using microarrays or RNA-seq, we often fit the data from
 *every* transcript as a response against a common model of independent variables. The variables
 describe the experiment, and we specify just the right side of a formula (the left side being used
-to fit the data). For example, if we have a treatment `x` that can take several values,
-and the actual value of `x` varies across samples, we might specify a model by
+to fit the data). For example, if we have a treatment `treat` that can take several values,
+and the actual value of `treat` varies across samples, we might specify a model by
 
 ```{r, eval=FALSE}
-~ x
+~  treat
 ```
 
 or possibly
 
 ```{r, eval=FALSE}
-~ 0 + x
+~ 0 + treat
 ```
-The second formula explicitly removes the intercept.
-
-Fitting such a model, however, doesn't tell us if there is differential expression between
-treatments `X`. For that we have to specify *contrasts*, which are the comparisons we wish to make.
-if `X` represents two alternative treatments, we simply want to know if the gene expresison is
-different for one treatment versus the other.
+The second formula explicitly removes the intercept. More on that  later.
 
 ## Specifying our model for differential gene expression analysis
 
 In order to identify differentially expressed genes using linear models, we need to do two
 things:
 
-1. Generate a model matrix specifying the design, and ;
-2. Generate a contrast matrix, specifying the comparisons of interest. 
+1. Generate a model matrix specifying the design, and 
+2. Fit the model to the design.
 
-The former is fits the model to the data, while the second performs statistical testing to
-identify which genes are differentially expressed.
+In all cases except for the simple two-class comparison, we must also specify a contrast matrix, which we'll get to shortly.
 
-Since `culture` just takes on two values, we can just look at one contrast, which is when they differ.
+In our first data set, we only have one treatment: the change of
+culture conditions. 
 
-The first key function is `model.matrix`. This function builds a matrix that describes the design of our experiment.
-
-```{r}
+```{r, message=FALSE}
 library(limma)
-model <- model.matrix( ~ 0 + eset$culture)
-## rename the model columns to correspond to the different growth conditions.
-colnames(model) <- levels(eset$culture)
-```
-As you can see, this function has created a matrix with two binary columns. These represent the two possible values of the culture conditions.
-
-
-```{r,echo=FALSE}
-kable(model)
+design <- model.matrix( ~ gse33146_eset[['culture medium:ch1']])
+colnames(design)[2] <- "SCGM"
 ```
 
-Since we only want to look at when the growth conditions *differ*, we create that one contrast with `makeContrasts()`
+Notice that the design matrix has two columns: one specifiying the _intercept_ and one specifying the change of culture conditions.
+
+```{r, echo=FALSE}
+kable(design)
+```
+
+The `lmFit()` function of limma fits a linear model for every row of our expression matrix. In the case of a two-class comparison, this is equivalent to a simple t-test.
 
 ```{r}
-contrasts <- makeContrasts(SCGM - MEGM, levels=model)
-contrasts
+fit <- lmFit(gse33146_eset,design)
 ```
 
+## Empirical Bayes correction in `limma` 
+
+Empirical Bayes (eBayes) is a method that borrows information about the distribution
+across genes to calculate a robust test statistic. In `limma`, this can be performed using
+the `eBayes()` function. The function requires that we provide an object returned from
+fitting a linear model (or contrast matrix) to the data. Performing eBayes correction is easily done in R using the following
+line of code:
+
+```{r}
+fitted.ebayes <- eBayes(fit)
+```
+
+## Extracting differentially expressed genes 
+
+We now have, model fits for each feature on the array, and we can arrange them in a table using
+`topTable()` By default, topTable will provide the top 10 features sorted by the "B" statistic,
+which is the log odds of differential expression.
+
+```{r, eval=FALSE}
+topTable(fitted.ebayes)
+```
+
+```{r, echo=FALSE}
+kable(topTable(fitted.ebayes))
+```
+
+See how it removed the intercept? In this case, the "SCGM" coefficient is telling us all that we need to know.
+
+Another good function is `decideTests()`. This function returns which tested features of an array pass the test criteria. By default, this is a (Benjamini-Hochberg) p value of 0.05, and no log fold change cutoff. We can look at a summary with a log fold change cutoff of 1 (meaning 2 fold change in either direction).
+
+```{r,eval=TRUE}
+summary(decideTests(fitted.ebayes[,"SCGM"],lfc=1))
+```
+
+## Using contrasts.
+
+The intercept is basically useless, when doing these sorts of tests, and what we really want is to be comparing groups, right? So can we create a design that reflects the changes in group means?  For that we have to specify *contrasts*, which are the comparisons we wish to make. If `treat` represents two alternative treatments, we simply want to know if the gene expression is different for one treatment versus the other, we calculate the group means for each treatment, and the contrast between them.
+
+
+```{r, group_mean_design}
+design <- model.matrix( ~ 0 + gse33146_eset[['culture medium:ch1']])
+colnames(design) <- levels(as.factor(gse33146_eset[['culture medium:ch1']]))
+kable(design)
+```
+If we remove the intercept, our coefficients now correspond to the conditions. This seems (to me) more natural, but it creates an extra step: deciding the contrasts between groups. In this case it's easy because there are only two groups. In other cases, we'll have more choices.
+
+```{r}
+contrast_matrix <- makeContrasts(SCGM - MEGM, levels=design)
+contrast_matrix
+```
 In our contrast matrix, we are interested in finding out the
 difference between the group grown in SCGM (the EMT phenotype) and
 the control (grown in MEGM). For that reason, we used `SCGM-MEGM`, with the latter being the reference. 
@@ -99,6 +149,17 @@ from the *limma* user guide (available at
 https://bioconductor.org/packages/release/bioc/vignettes/limma/inst/doc/usersguide.pdf,
 and in particular, pages 35-64), which demonstrates the use of *limma* for a wide range of
 questions and even two-colored platforms.
+
+Now we can move ahead to the fit.
+
+```{r}
+fit <- lmFit(gse33146_eset,design)
+fit2 <- contrasts.fit(fit,contrasts=contrast_matrix)
+fit2 <- eBayes(fit2)
+summary(decideTests(fit2,lfc=1))
+```
+
+Notice we found the _exact same_ number of differentially expressed genes, but used the contrasts explicitly in the second case.
 
 > ## The importance of a good model
 >
@@ -113,54 +174,14 @@ questions and even two-colored platforms.
 > and also how one can correct for these technical differences in a statistically robust
 > manner.
 {: .idea}
- 
-## Model fitting
-
-Once we have generated both model and contrast matrix, we will then proceed to fit them to the data. This is accomplished in just two lines of code in R: 
-
-
-```{r}
-fit <- lmFit(eset, model)
-fitted.contrast <- contrasts.fit(fit,contrasts)
-```
-
-
-## Empirical Bayes correction in `limma` 
-
-Empirical Bayes (eBayes) is a method that borrows information about the distribution
-across genes to calculate a robust test statistic. In `limma`, this can be performed using
-the `eBayes()` function. The function requires that we provide an object returned from
-fitting a linear model (or contrast matrix) to the data. Once we have fitted the contrast
-matrix to the data, performing eBayes correction is easily done in R using the following
-line of code:
-
-```{r}
-fitted.ebayes <- eBayes(fitted.contrast)
-```
-
-## Extracting differentially expressed genes 
-
-We now have, model fits for each feature on the array, and we can arrange them in a table using
-`TopTable()` By default, TopTable will provide the top 10 features sorted by the "B" statistic,
-which is the log odds of differential expression.
-
-```{r,eval=FALSE}
-topTable(fitted.ebayes)
-```
-
-```{r,echo=FALSE}
-kable(tibble::as_tibble(as.data.frame(topTable(fitted.ebayes)),rownames='probeset'))
-```
-
-
-
-> ## Think about it
->
-> By default, `topTable()` returns only the top ten genes ranked by their B value. How do
-> you get the statistics associated with all the genes on the array? Explore the options of
-> topTable to identify lists of genes that fit your criteria of interest.
-{: .callout}
 
 {% include links.md %}
 
+
+```{r closeout,echo=FALSE}
+save(list=ls(),file=.closing_image)
+```
+
 [formula]: https://stat.ethz.ch/R-manual/R-devel/library/stats/html/formula.html
+
+
