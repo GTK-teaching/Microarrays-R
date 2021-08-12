@@ -4,7 +4,7 @@ source "https://rubygems.org"
 # When you want to use a different version, change it below, save the
 # file and run `bundle install`. Run Jekyll with `bundle exec`, like so:
 
-gem "jekyll", "~> 3.8.5"
+gem "jekyll", "~> 4.2.0"
 
 gem "jekyll-remote-theme"
 
