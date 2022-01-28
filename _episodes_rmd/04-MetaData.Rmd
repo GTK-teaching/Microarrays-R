@@ -18,8 +18,8 @@ knitr::opts_chunk$set(echo = TRUE)
 source("../bin/chunk-options.R")
 library(oligo)
 library(GEOquery)
-.starting_image <- ".02-supplemental-RData"
-.closing_image <- ".03-RData"
+.starting_image <- ".03-supplemental-RData"
+.closing_image <- ".04-RData"
 if(file.exists(.starting_image)) {
     load(.starting_image,verbose=TRUE)
     }

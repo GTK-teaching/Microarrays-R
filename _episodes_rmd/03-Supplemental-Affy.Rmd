@@ -14,7 +14,17 @@ keypoints:
   - The ExpressionSet class of object contains slots for different information associated  with a microarray experiment. 
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("../bin/chunk-options.R")
+library(GEOquery)
 
+.starting_image <- ".02-RData"
+.closing_image <- ".03-supplemental-RData"
+if(file.exists(.starting_image)) {
+    load(.starting_image,verbose=TRUE)
+}
+```
 
 We now have processed data for two series, [GSE33146][GSE33146] and [GSE66417][GEE66417]. We need to get the _unprocessed_ data to understand the processing.
 
@@ -26,13 +36,11 @@ Nonetheless, if you want to do it, `getGEOSuppFiles()` will download all the
 supplementary files for the GEO accession. Note that it doesn't *process* or even *parse* the files,
 since there are many different types of supplementary files on GEO and R doesn't know the format ahead of time. It does, however, return the file paths.
 
-
-~~~
+```{r, eval=FALSE}
 ## If you have an awesome connection and a lot of time
 filePaths <- getGEOSuppFiles('GSE33146')
 filePaths <- getGEOSuppFiles('GSE66417')
-~~~
-{: .language-r}
+```
 
 In the interest of time, don't do that. Instead, use the files you have downloaded from LumiNUS and
 unpacked into a directory named for each series. You can leave them compressed.
@@ -62,50 +70,12 @@ Therefore, the following needs to be done:
 >
 > > ## Solution
 > >
-> > 
-> > ~~~
+> > ```{r, eval=TRUE,message=FALSE}
 > > library(oligo)
 > > library(oligoClasses)
 > > gse33146_celdata <- read.celfiles(list.celfiles('GSE33146',full.names=TRUE,listGzipped=TRUE))
-> > ~~~
-> > {: .language-r}
-> > 
-> > 
-> > 
-> > ~~~
-> > Reading in : GSE33146/GSM820817.CEL.gz
-> > Reading in : GSE33146/GSM820818.CEL.gz
-> > Reading in : GSE33146/GSM820819.CEL.gz
-> > Reading in : GSE33146/GSM820820.CEL.gz
-> > Reading in : GSE33146/GSM820821.CEL.gz
-> > Reading in : GSE33146/GSM820822.CEL.gz
-> > ~~~
-> > {: .output}
-> > 
-> > 
-> > 
-> > ~~~
 > > gse66417_celdata <- read.celfiles(list.celfiles('GSE66417',full.names=TRUE,listGzipped=TRUE))
-> > ~~~
-> > {: .language-r}
-> > 
-> > 
-> > 
-> > ~~~
-> > Reading in : GSE66417/GSM1622170_Jurkat-Ctrl-RD1_HuGene-2_0-st_.CEL.gz
-> > Reading in : GSE66417/GSM1622189_Jurkat-Ctrl-RD2_HuGene-2_0-st_.CEL.gz
-> > Reading in : GSE66417/GSM1622191_Jurkat-Ctrl-RD3_HuGene-2_0-st_.CEL.gz
-> > Reading in : GSE66417/GSM1622194_Jurkat-Ixazomib-RD4_HuGene-2_0-st_.CEL.gz
-> > Reading in : GSE66417/GSM1622196_Jurkat-Ixazomib-RD5_HuGene-2_0-st_.CEL.gz
-> > Reading in : GSE66417/GSM1622198_Jurkat-Ixazomib-RD6_HuGene-2_0-st_.CEL.gz
-> > Reading in : GSE66417/GSM1622200_L540-Ctrl-RD7_HuGene-2_0-st_.CEL.gz
-> > Reading in : GSE66417/GSM1622202_L540-Ctrl-RD8_HuGene-2_0-st_.CEL.gz
-> > Reading in : GSE66417/GSM1622204_L540-Ctrl-RD9_HuGene-2_0-st_.CEL.gz
-> > Reading in : GSE66417/GSM1622206_L540-Ixazomib-RD10_HuGene-2_0-st_.CEL.gz
-> > Reading in : GSE66417/GSM1622209_L540-Ixazomib-RD11_HuGene-2_0-st_.CEL.gz
-> > Reading in : GSE66417/GSM1622211_L540-Ixazomib-RD12_HuGene-2_0-st_.CEL.gz
-> > ~~~
-> > {: .output}
+> > ```
 > >
 > {: .solution}
 {: .challenge}
@@ -113,13 +83,9 @@ Therefore, the following needs to be done:
 
 Once you have the CEL file data, you can get a pseudo-image of the chip intensities.
 
-
-~~~
+```{r, out.width="50%", out.height="50%", fig.cap="An image of a CEL file"}
 image(gse33146_celdata[,1])
-~~~
-{: .language-r}
-
-<img src="../fig/rmd-unnamed-chunk-3-1.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" width="612" style="display: block; margin: auto;" />
+```
 
 Note that `read.celfiles` loaded data packages from Bioconductor containing information on the platform design for each chip type.
 
@@ -140,7 +106,10 @@ Note that `read.celfiles` loaded data packages from Bioconductor containing info
 > with 3′ biased Affymetrix arrays, so `oligo` is preferred
 {: .warning}
 
-
+```{r closeout, eval=TRUE, include=FALSE}
+save(list=ls(),file=.closing_image)
+Sys.sleep(1)
+```
 	
 {% include site-links.md %} 
 {% include links.md %} 
