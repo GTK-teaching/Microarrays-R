@@ -119,7 +119,7 @@ image(gse33146_celdata[,1])
 ~~~
 {: .language-r}
 
-<img src="../fig/rmd-unnamed-chunk-3-1.png" title="An image of a CEL file" alt="An image of a CEL file" width="50%" height="50%" style="display: block; margin: auto;" />
+<img src="../fig/rmd-image_cel-1.png" title="An image of a CEL file" alt="An image of a CEL file" width="50%" height="50%" style="display: block; margin: auto;" />
 
 Note that `read.celfiles` loaded data packages from Bioconductor containing information on the platform design for each chip type.
 

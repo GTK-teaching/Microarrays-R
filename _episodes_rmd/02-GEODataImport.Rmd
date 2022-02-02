@@ -107,9 +107,9 @@ GEOquery works for different kinds of GEO data, including Samples (GSM), platfor
 
 ## Getting a single GSM object for a single sample
 
-We can create a single GSM object with a call to getGEO (I'm using an example from the same GSE).
+We can create a single GSM object of a single sample with a call to getGEO (I'm using an example from the same GSE).
 
-```{r, eval=FALSE}
+```{r GSMGet, eval=TRUE}
 library(GEOquery)
 gsm <- getGEO('GSM820817')
 ```
@@ -143,15 +143,14 @@ As you can see, the `Table` method returns numeric estimates for each probe (whi
 
 ## Retrieving the whole GSE as a list of ExpressionSets
 
-The function `getGEO()` with a GSE identifier as a sole argument will download the series matrix files from GEO and return them as a list of ExpressionSet objects. In many cases, there will only be one experiment for a series, so the list will contain a single ExpressionSet, which can be retrieved as the first member of the list.
+The function `getGEO()` with a GSE identifier as a sole argument will download the series matrix files from GEO and return them as a _list of ExpressionSet objects_. In many cases, there will only be one experiment for a series, so the list will contain a single ExpressionSet, which can be retrieved as the first member of the list.
 
-```{r getGEO, eval=FALSE}
+```{r getGEO, eval=TRUE}
 library(GEOquery)
 gse33146 <- getGEO('GSE33146')
-```
-```{r GSE props}
 length(gse33146)
 class(gse33146[[1]])
+gse33146 <- gse33146[[1]]
 ```
 
 ### Retrieving the whole GSE by parsing the SOFT file
@@ -160,21 +159,21 @@ When `getGEO()` is run with the named argument `GSEMatrix=FALSE`, it does not pa
 
 The GSE is the most complicated object retrieved by getGEO, because a series is composed of sample (GSM) and platform (GPL) objects.  Each is accessed by a *list*: `GSMList` and `GPLList`. You can download the whole series into an R object by accession, but you can also download the file outside of R and read it in as a local file.
 
-```{r noGSEMatrix}
+```{r noGSEMatrix, eval=FALSE}
 library(GEOquery)
 ## if we have a good connection to the internet, we can download it directly from GEO
-## gse2 <- getGEO('GSE33146',GSEMatrix=FALSE)
-## If it's available on a local file system
+gse2 <- getGEO('GSE33146',GSEMatrix=FALSE)
+# If it's available on a local file system, we can read the file directly
 ##gse2 <- getGEO(filename='data/GSE33146_family.soft')
 names(GSMList(gse2))
 ```
 
 > ## Using the processed data from a GSE or GDS as an R ExpressionSet
 > 
-> The GEOquery package provides a function `GDS2eSet` to converta a GDS directly to an ExpressionSet
+> For a GEO Data Set (GDS) The GEOquery package provides a function `GDS2eSet` to converta a GDS directly to an ExpressionSet
 > object. This function uses the *processed* data available on GEO, not the raw data.
 > 
-> There is no `GSE2eSet` function because a single GEO Series can contain data from multiple
+> There is no corresponding `GSE2eSet` function because a single GEO Series can contain data from multiple
 > platforms, and an ExpressionSet object is data from one platform.
 {: .callout} 
 
@@ -187,7 +186,7 @@ names(GSMList(gse2))
 >
 > > ## Solution
 > >
-> > ```{r gse66417, eval=FALSE}
+> > ```{r gse66417}
 > > gse66417 <- getGEO('GSE66417') 
 > > length(gse66417) # this should be a list of length 1
 > > gse66417 <- gse66417[[1]]

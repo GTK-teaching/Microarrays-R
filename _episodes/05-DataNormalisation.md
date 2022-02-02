@@ -82,7 +82,7 @@ Sample normalisation in RMA is performed via quantile normalisation of the probe
 
 
 ~~~
-oligo_normalised <- normalize(raw_nobg,method='quantile')
+oligo_normalised <- normalize(raw_nobg,method='quantile',which='pm')
 ~~~
 {: .language-r}
 
@@ -125,8 +125,7 @@ hist(oligo_summarised)
 ~~~
 {: .language-r}
 
-<img src="../fig/rmd-unnamed-chunk-1-1.png" title="plot of chunk unnamed-chunk-1" alt="plot of chunk unnamed-chunk-1" width="612" style="display: block; margin: auto;" />
-
+<img src="../fig/rmd-oligo_summarised-1.png" title="plot of chunk oligo_summarised" alt="plot of chunk oligo_summarised" width="612" style="display: block; margin: auto;" />
 
 The summarisation step reduces the size of the data for each sample to the number of
 measured transcripts (or genes, or exons, depending on the array). These are referred to as "features", or "probesets", and the resulting ExpressionSet is "feature-level" data.

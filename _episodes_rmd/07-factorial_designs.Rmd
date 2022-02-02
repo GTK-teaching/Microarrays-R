@@ -19,8 +19,8 @@ library(oligo)
 library(limma)
 library(pd.hugene.2.0.st)
 library(pd.hg.u133.plus.2)
-.starting_image <- ".05-RData"
-.closing_image <- ".06-RData"
+.starting_image <- ".06-RData"
+.closing_image <- ".07-RData"
 if(file.exists(.starting_image)) {
     load(.starting_image)
     }
@@ -84,4 +84,8 @@ gse66417_fit2 <- eBayes(gse66417_fit2)
 summary(decideTests(gse66417_fit2,lfc=1))
 ```
 
+
+```{r closeout,echo=FALSE}
+save(list=ls(),file=.closing_image)
+```
 

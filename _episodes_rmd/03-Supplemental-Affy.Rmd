@@ -83,7 +83,7 @@ Therefore, the following needs to be done:
 
 Once you have the CEL file data, you can get a pseudo-image of the chip intensities.
 
-```{r, out.width="50%", out.height="50%", fig.cap="An image of a CEL file"}
+```{r image_cel, out.width="50%", out.height="50%", fig.cap="An image of a CEL file"}
 image(gse33146_celdata[,1])
 ```
 

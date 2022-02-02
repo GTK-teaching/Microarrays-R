@@ -16,18 +16,7 @@ keypoints:
 ---
 
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-source("../bin/chunk-options.R")
-.starting_image <- ".06-RData"
-.closing_image <- ".07-RData"
-if(file.exists(.starting_image)) {
-    load(.starting_image)
-    }
-library(limma)
-library(pd.hg.u133.plus.2)
-library(oligo)
-```
+
 
 ## Downstream analysis of microarray data
 
@@ -39,19 +28,40 @@ So far in our analysis, we have obtained a list of differentially expressed gene
 A volcano plot is a helpful visualization that shows the log fold-change versus the negative log p-value. Usually, we will expect that genes larger absolute fold changes will have larger negative log p-values and hence implying greater statistical confidence. 
 
 
-```{r}
+
+~~~
 volcanoplot(fitted.ebayes,coef=2)
-```
+~~~
+{: .language-r}
+
+<img src="../fig/rmd-unnamed-chunk-1-1.png" title="plot of chunk unnamed-chunk-1" alt="plot of chunk unnamed-chunk-1" width="612" style="display: block; margin: auto;" />
 
 But we can use some R features to highlight the points with cutoffs of
 interest. Let's decide the interesting genes are those with
 \\(|\log_2(\text{fold change})| \ge 2\\) and adjusted \\(p < 0.05\\), thus:
 
-```{r}
+
+~~~
 interesting_genes <- topTable(fitted.ebayes,number=Inf,p.value = 0.05,lfc=2)
+~~~
+{: .language-r}
+
+
+
+~~~
+Removing intercept from test coefficients
+~~~
+{: .output}
+
+
+
+~~~
 volcanoplot(fitted.ebayes, coef=2, main=sprintf("%d features pass our cutoffs",nrow(interesting_genes)))
 points(interesting_genes[['logFC']],-log10(interesting_genes[['P.Value']]),col='red')
-```
+~~~
+{: .language-r}
+
+<img src="../fig/rmd-unnamed-chunk-2-1.png" title="plot of chunk unnamed-chunk-2" alt="plot of chunk unnamed-chunk-2" width="612" style="display: block; margin: auto;" />
 
 From the plot above, we can see that many genes tend to show small but statistically insignificant changes in expression level between the two conditions. On the other hand, a small subset of the genes show very large fold changes with relatively small p-values. These "interesting" genes tend to be further analyzed for their potential role in the biological phenomenon of interest. 
 
@@ -77,27 +87,37 @@ For simplicity, we will visualize the expression of features that pass our cutof
 
 Let's use the genes that passed our previous cutoffs and create a dataset of just those genes
 
-```{r}
+
+~~~
 eset_of_interest <- gse33146_eset[rownames(interesting_genes),]
 heatmap(exprs(eset_of_interest))
-```
+~~~
+{: .language-r}
+
+<img src="../fig/rmd-unnamed-chunk-3-1.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" width="612" style="display: block; margin: auto;" />
 
 The `heatmap()` function does a lot of work. The denodrograms on the top and the left represent the ordering of rows and columns. This is done using a distance calculation, by default Euclidian distance. It doesn't seem quite right, because we only have two groups of genes: they should either be up or down in each group.
 
 We can make a few changes to fix and beautify the  heatmap. The most useful is to use *correlation*, rather than euclidean distance, for the clustering. The function requires a distance as input, so we'll use `1 - correlation`.  We can also change the colours, label the samples according to culture conditions, and remove the gene labels.
 
 
-```{r}
+
+~~~
 library(RColorBrewer)
 heatmap(exprs(eset_of_interest),
         labCol=gse33146_eset[['culture medium:ch1']] ,labRow=NA,
         col       = rev(brewer.pal(10, "RdBu")),
         distfun   = function(x) as.dist(1-cor(t(x))))
-```
+~~~
+{: .language-r}
+
+<img src="../fig/rmd-unnamed-chunk-4-1.png" title="plot of chunk unnamed-chunk-4" alt="plot of chunk unnamed-chunk-4" width="612" style="display: block; margin: auto;" />
 
 
 ## What's next?
 
 Although we have discussed the volcano plot and heatmaps, there are numerous avenues for downstream analysis. For instance, one commonly used analysis toolkit is the gene set enrichment analysis (GSEA) where we test for whether particular sets of genes are enriched in our list of differentially expressed genes. Ultimately, what downstream analysis is performed is dependent on the question that one wishes to address. New analysis methods are constantly being developed by others, and hence it is important for one to keep abreast on these developments in order to get the most out of our analysis. 
+
+
 
 {% include links.md %}

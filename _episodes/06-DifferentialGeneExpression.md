@@ -159,19 +159,19 @@ Up       582
 ~~~
 {: .output}
 
-## Using contrasts.
+## Using contrasts
 
-The intercept is basically useless, when doing these sorts of tests, and what we really want is to be comparing groups, right? So can we create a design that reflects the changes in group means?  For that we have to specify *contrasts*, which are the comparisons we wish to make. If `treat` represents two alternative treatments, we simply want to know if the gene expression is different for one treatment versus the other, we calculate the group means for each treatment, and the contrast between them.
+The intercept is basically useless when doing these sorts of tests, and what we really want is to be comparing experimental groups, right? So can we create a design that reflects the changes in group means?  We don't _have_ do do this for only two conditions, but it becomes essential for more complex experimental designs.
+
+To accomplish this we have to specify *contrasts* within our experimental design. Contrasts are the comparisons we wish to make. If `treat` represents two alternative treatments, we simply want to know if the gene expression is different for one treatment versus the other, we calculate the group means for each treatment, and the contrast (the difference) between them.
 
 
 
 ~~~
 design <- model.matrix( ~ 0 + gse33146_eset[['culture medium:ch1']])
 colnames(design) <- levels(as.factor(gse33146_eset[['culture medium:ch1']]))
-kable(design)
 ~~~
 {: .language-r}
-
 
 
 | MEGM| SCGM|
@@ -182,6 +182,7 @@ kable(design)
 |    0|    1|
 |    0|    1|
 |    0|    1|
+
 If we remove the intercept, our coefficients now correspond to the conditions. This seems (to me) more natural, but it creates an extra step: deciding the contrasts between groups. In this case it's easy because there are only two groups. In other cases, we'll have more choices.
 
 

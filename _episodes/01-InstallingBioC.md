@@ -40,7 +40,13 @@ BiocManager::install()
 ~~~
 {: .language-r}
 
-Notice the use of `if`. The `BiocManager` package will only be installed if it can't be loaded, because `requireNamespace()` returns a logical value depending on the success of loading the named library.  After loading the BiocManager namespace, `BiocManager::install()` installs the required Bioconductor packages. To install  an *optional* Bioconductor package named "foo", you can run `BiocManager::install('foo')` instead of `install.packages()`. 
+Notice the use of `if`. The `BiocManager` package will only be
+installed if it can't be loaded, because `requireNamespace()` returns
+a logical value depending on the success of loading the named library.
+After loading the BiocManager namespace, `BiocManager::install()`
+installs the required Bioconductor packages. To install an *optional*
+Bioconductor package named "foo", you can run
+`BiocManager::install('foo')` instead of `install.packages()`.
 
 ## Setting up your computer for today's lesson.
 
@@ -54,7 +60,9 @@ BiocManager::install("GEOquery")
 ~~~
 {: .language-r}
 
-You will need to install the following packages which we will be using for the rest of the practical today. Some of them may be intalled by default, so only install them if they are not available.
+You will need to install the following packages which we will be using
+for the rest of the practical today. Some of them may be intalled by
+default, so only install them if they are not available.
 
 [affy](http://bioconductor.org/packages/release/bioc/html/affy.html)
 : A package for analysing Affymetrix platform data

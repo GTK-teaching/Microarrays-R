@@ -18,8 +18,8 @@ keypoints:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 source("../bin/chunk-options.R")
-.starting_image <- ".06-RData"
-.closing_image <- ".07-RData"
+.starting_image <- ".07-RData"
+.closing_image <- ".08-RData"
 if(file.exists(.starting_image)) {
     load(.starting_image)
     }
@@ -147,6 +147,11 @@ AnnotationDbi::select(hgu133plus2.db,ps,c("SYMBOL","ENTREZID","GENENAME"),keytyp
 > > ```
 > {: .solution}
 {: .challenge}
+
+```{r closeout,echo=FALSE}
+save(list=ls(),file=.closing_image)
+```
+
 
 {% include links.md %}
 

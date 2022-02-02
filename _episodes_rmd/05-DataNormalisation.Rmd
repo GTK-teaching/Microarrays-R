@@ -21,7 +21,7 @@ source("../bin/chunk-options.R")
 library(oligo)
 library(pd.hugene.2.0.st)
 library(pd.hg.u133.plus.2)
-.starting_image <- ".03-RData"
+.starting_image <- ".04-RData"
 .closing_image <- ".05-RData"
 if(file.exists(.starting_image)) {
     load(.starting_image)
@@ -96,18 +96,17 @@ Sample normalisation in RMA is performed via quantile normalisation of the probe
  Quantile normalisation puts the data on a common empirical distribution.
 
 ```{r oligo_normalization}
-oligo_normalised <- normalize(raw_nobg,method='quantile')
+oligo_normalised <- normalize(raw_nobg,method='quantile',which='pm')
 hist(oligo_normalised,lwd=2,xlab='log intensity', which='pm',
      main="CEL file densities after quantile normalisation")
 ```
 
 ## Summarisation: from probe-level to feature-level data. 
 
-```{r}
+```{r oligo_summarised}
 oligo_summarised <- rma(oligo_normalised,background=FALSE,normalize=FALSE)
 hist(oligo_summarised)
 ```
-
 
 The summarisation step reduces the size of the data for each sample to the number of
 measured transcripts (or genes, or exons, depending on the array). These are referred to as "features", or "probesets", and the resulting ExpressionSet is "feature-level" data.
