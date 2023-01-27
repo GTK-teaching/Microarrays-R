@@ -11,3 +11,7 @@ _site
 
 vendor
 .bundle/
+/Gemfile.lock
+/_episodes_rmd/data/GSE33146/
+/data/GSE33146/
+/data/GSE66417/
