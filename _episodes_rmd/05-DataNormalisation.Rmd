@@ -45,7 +45,7 @@ considerably smallar than the data set prior to processing. While the starting o
 
 The `hist()` functions from the `oligo` package show the signal densities of data from each sample in overlaid line plots. 
 
-```{r affy-densities, warning=FALSE, echo=FALSE, message=FALSE}
+```{r affy-densities, warning=FALSE, message=FALSE}
 hist(gse33146_celdata,
      main='CEL file densities before normalisation or background correction',
      lwd=2)
@@ -82,7 +82,7 @@ The background removal step of RMA estimates and removes this second component.
 
 The *gcrma* algorithm differs from *rma* in assuming the background also depends on the GC content of the probes.
 
-```{r bgcorrection, echo=FALSE}
+```{r bgcorrection}
 raw_nobg <- backgroundCorrect(gse33146_celdata)
 hist(raw_nobg,xlab='log intensity',
      main="CEL file densities after RMA background correction",
