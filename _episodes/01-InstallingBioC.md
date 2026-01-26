@@ -4,6 +4,7 @@
 title: Working with Bioconductor
 teaching: 10
 exercises: 10
+start: yes
 source: Rmd
 questions: 
   - Why do Bioconductor packages use a different installation process than other R packages?

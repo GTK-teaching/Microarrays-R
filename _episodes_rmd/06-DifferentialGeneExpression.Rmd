@@ -2,6 +2,7 @@
 title: "Identifying differentially expressed genes using linear models (part 1)"
 source: Rmd
 teaching: 20
+start: yes
 exercises: 20
 questions:
   - "How do we identify genes that are differentially expressed in a statistically rigorous manner?"
