@@ -30,124 +30,42 @@ where each value $\beta$ represents a particular condition. We would like to ide
 ~~~
 library(dplyr)
 pd <- pData(gse66417_eset)
-~~~
-{: .language-r}
-
-
-
-~~~
-Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'pData': object 'gse66417_eset' not found
-~~~
-{: .error}
-
-
-
-~~~
 pd <- rename(pd,cell_type="cell type:ch1",treatment="treatment:ch1")
-~~~
-{: .language-r}
-
-
-
-~~~
-Error: object 'pd' not found
-~~~
-{: .error}
-
-
-
-~~~
 pd$treatment <- as.factor(pd$treatment)
-~~~
-{: .language-r}
-
-
-
-~~~
-Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'as.factor': object 'pd' not found
-~~~
-{: .error}
-
-
-
-~~~
 levels(pd$treatment) <- c("Ixazomib","Control")
-~~~
-{: .language-r}
-
-
-
-~~~
-Error in eval(ei, envir): object 'pd' not found
-~~~
-{: .error}
-
-
-
-~~~
 pd$group <- as.factor(paste(pd$cell_type,pd$treatment))
-~~~
-{: .language-r}
-
-
-
-~~~
-Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'as.factor': object 'pd' not found
-~~~
-{: .error}
-
-
-
-~~~
 levels(pd$group) <- c("Hodgkins.Control","Hodgkins.Ixazomib","TCL.Control","TCL.Ixazomib")
 ~~~
 {: .language-r}
 
 
-
 ~~~
-Error in eval(ei, envir): object 'pd' not found
-~~~
-{: .error}
 
 
+|           |cell_type        |treatment |group             |
+|:----------|:----------------|:---------|:-----------------|
+|GSM1622170 |T-Cell Lymphoma  |Control   |TCL.Control       |
+|GSM1622189 |T-Cell Lymphoma  |Control   |TCL.Control       |
+|GSM1622191 |T-Cell Lymphoma  |Control   |TCL.Control       |
+|GSM1622194 |T-Cell Lymphoma  |Ixazomib  |TCL.Ixazomib      |
+|GSM1622196 |T-Cell Lymphoma  |Ixazomib  |TCL.Ixazomib      |
+|GSM1622198 |T-Cell Lymphoma  |Ixazomib  |TCL.Ixazomib      |
+|GSM1622200 |Hodgkin Lymphoma |Control   |Hodgkins.Control  |
+|GSM1622202 |Hodgkin Lymphoma |Control   |Hodgkins.Control  |
+|GSM1622204 |Hodgkin Lymphoma |Control   |Hodgkins.Control  |
+|GSM1622206 |Hodgkin Lymphoma |Ixazomib  |Hodgkins.Ixazomib |
+|GSM1622209 |Hodgkin Lymphoma |Ixazomib  |Hodgkins.Ixazomib |
+|GSM1622211 |Hodgkin Lymphoma |Ixazomib  |Hodgkins.Ixazomib |
+
 ~~~
-Error: object 'pd' not found
-~~~
-{: .error}
+{: .output}
 
 Now we can create a design representing the different groups
 
 
 ~~~
 design <- model.matrix(~ 0 + pd$group)
-~~~
-{: .language-r}
-
-
-
-~~~
-Error in eval(predvars, data, env): object 'pd' not found
-~~~
-{: .error}
-
-
-
-~~~
 colnames(design) <- levels(pd$group)
-~~~
-{: .language-r}
-
-
-
-~~~
-Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'levels': object 'pd' not found
-~~~
-{: .error}
-
-
-
-~~~
 design
 ~~~
 {: .language-r}
@@ -155,14 +73,24 @@ design
 
 
 ~~~
-standardGeneric for "design" defined from package "BiocGenerics"
-
-function (object, ...) 
-standardGeneric("design")
-<bytecode: 0x55d96c431e08>
-<environment: 0x55d96c4324d0>
-Methods may be defined for arguments: object
-Use  showMethods(design)  for currently available ones.
+   Hodgkins.Control Hodgkins.Ixazomib TCL.Control TCL.Ixazomib
+1                 0                 0           1            0
+2                 0                 0           1            0
+3                 0                 0           1            0
+4                 0                 0           0            1
+5                 0                 0           0            1
+6                 0                 0           0            1
+7                 1                 0           0            0
+8                 1                 0           0            0
+9                 1                 0           0            0
+10                0                 1           0            0
+11                0                 1           0            0
+12                0                 1           0            0
+attr(,"assign")
+[1] 1 1 1 1
+attr(,"contrasts")
+attr(,"contrasts")$`pd$group`
+[1] "contr.treatment"
 ~~~
 {: .output}
 
@@ -180,13 +108,6 @@ contrasts_matrix <- makeContrasts(drug_in_hodgkins=Hodgkins.Ixazomib - Hodgkins.
 {: .language-r}
 
 
-
-~~~
-Error in if (levels[1] == "(Intercept)") {: argument is of length zero
-~~~
-{: .error}
-
-
 ~~~
 kable(contrasts_matrix)
 ~~~
@@ -195,56 +116,25 @@ kable(contrasts_matrix)
 
 
 ~~~
-Error: object 'contrasts_matrix' not found
+
+
+|                  | drug_in_hodgkins| drug_in_TCL| cell_in_control| cell_w_drug| interaction|
+|:-----------------|----------------:|-----------:|---------------:|-----------:|-----------:|
+|Hodgkins.Control  |               -1|           0|               1|           0|           1|
+|Hodgkins.Ixazomib |                1|           0|               0|           1|          -1|
+|TCL.Control       |                0|          -1|              -1|           0|          -1|
+|TCL.Ixazomib      |                0|           1|               0|          -1|           1|
+
 ~~~
-{: .error}
+{: .output}
 
 Now we can run the fit as usual
 
 
 ~~~
 gse66417_fit <- lmFit(gse66417_eset,design)
-~~~
-{: .language-r}
-
-
-
-~~~
-Error: object 'gse66417_eset' not found
-~~~
-{: .error}
-
-
-
-~~~
 gse66417_fit2 <- contrasts.fit(gse66417_fit,contrasts=contrasts_matrix)
-~~~
-{: .language-r}
-
-
-
-~~~
-Error: object 'contrasts_matrix' not found
-~~~
-{: .error}
-
-
-
-~~~
 gse66417_fit2 <- eBayes(gse66417_fit2)
-~~~
-{: .language-r}
-
-
-
-~~~
-Error: object 'gse66417_fit2' not found
-~~~
-{: .error}
-
-
-
-~~~
 summary(decideTests(gse66417_fit2,lfc=1))
 ~~~
 {: .language-r}
@@ -252,9 +142,12 @@ summary(decideTests(gse66417_fit2,lfc=1))
 
 
 ~~~
-Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'summary': object 'gse66417_fit2' not found
+       drug_in_hodgkins drug_in_TCL cell_in_control cell_w_drug interaction
+Down                451           2            2330        2769         380
+NotSig            52649       53531           49312       48453       52888
+Up                  517          84            1975        2395         349
 ~~~
-{: .error}
+{: .output}
 
 
 

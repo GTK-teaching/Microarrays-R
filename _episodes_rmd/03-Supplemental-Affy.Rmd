@@ -36,13 +36,15 @@ Nonetheless, if you want to do it, `getGEOSuppFiles()` will download all the
 supplementary files for the GEO accession. Note that it doesn't *process* or even *parse* the files,
 since there are many different types of supplementary files on GEO and R doesn't know the format ahead of time. It does, however, return the file paths.
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 ## If you have an awesome connection and a lot of time
-filePaths <- getGEOSuppFiles('GSE33146')
-filePaths <- getGEOSuppFiles('GSE66417')
+filePaths <- rownames(getGEOSuppFiles('GSE33146'))
+untar(filePaths,exdir="GSE33146")
+filePaths <- rownames(getGEOSuppFiles('GSE66417'))
+untar(filePaths,exdir="GSE66417")
 ```
 
-In the interest of time, don't do that. Instead, use the files you have downloaded from LumiNUS and
+In the interest of time, don't do that. Instead, use the files you have downloaded from Canvas and
 unpacked into a directory named for each series. You can leave them compressed.
 
 ## Reading CEL data using the `oligo` package.

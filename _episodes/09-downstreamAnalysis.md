@@ -34,12 +34,10 @@ volcanoplot(fitted.ebayes,coef=2)
 ~~~
 {: .language-r}
 
-
-
-~~~
-Error: object 'fitted.ebayes' not found
-~~~
-{: .error}
+<div class="figure" style="text-align: center">
+<img src="../fig/rmd-unnamed-chunk-1-1.png" alt="plot of chunk unnamed-chunk-1" width="612" />
+<p class="caption">plot of chunk unnamed-chunk-1</p>
+</div>
 
 But we can use some R features to highlight the points with cutoffs of
 interest. Let's decide the interesting genes are those with
@@ -54,37 +52,22 @@ interesting_genes <- topTable(fitted.ebayes,number=Inf,p.value = 0.05,lfc=2)
 
 
 ~~~
-Error: object 'fitted.ebayes' not found
+Removing intercept from test coefficients
 ~~~
-{: .error}
+{: .output}
 
 
 
 ~~~
 volcanoplot(fitted.ebayes, coef=2, main=sprintf("%d features pass our cutoffs",nrow(interesting_genes)))
-~~~
-{: .language-r}
-
-
-
-~~~
-Error: object 'fitted.ebayes' not found
-~~~
-{: .error}
-
-
-
-~~~
 points(interesting_genes[['logFC']],-log10(interesting_genes[['P.Value']]),col='red')
 ~~~
 {: .language-r}
 
-
-
-~~~
-Error: object 'interesting_genes' not found
-~~~
-{: .error}
+<div class="figure" style="text-align: center">
+<img src="../fig/rmd-unnamed-chunk-2-1.png" alt="plot of chunk unnamed-chunk-2" width="612" />
+<p class="caption">plot of chunk unnamed-chunk-2</p>
+</div>
 
 From the plot above, we can see that many genes tend to show small but statistically insignificant changes in expression level between the two conditions. On the other hand, a small subset of the genes show very large fold changes with relatively small p-values. These "interesting" genes tend to be further analyzed for their potential role in the biological phenomenon of interest. 
 
@@ -113,29 +96,14 @@ Let's use the genes that passed our previous cutoffs and create a dataset of jus
 
 ~~~
 eset_of_interest <- gse33146_eset[rownames(interesting_genes),]
-~~~
-{: .language-r}
-
-
-
-~~~
-Error: object 'gse33146_eset' not found
-~~~
-{: .error}
-
-
-
-~~~
 heatmap(exprs(eset_of_interest))
 ~~~
 {: .language-r}
 
-
-
-~~~
-Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'exprs': object 'eset_of_interest' not found
-~~~
-{: .error}
+<div class="figure" style="text-align: center">
+<img src="../fig/rmd-unnamed-chunk-3-1.png" alt="plot of chunk unnamed-chunk-3" width="612" />
+<p class="caption">plot of chunk unnamed-chunk-3</p>
+</div>
 
 The `heatmap()` function does a lot of work. The denodrograms on the top and the left represent the ordering of rows and columns. This is done using a distance calculation, by default Euclidian distance. It doesn't seem quite right, because we only have two groups of genes: they should either be up or down in each group.
 
@@ -152,12 +120,10 @@ heatmap(exprs(eset_of_interest),
 ~~~
 {: .language-r}
 
-
-
-~~~
-Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'exprs': object 'eset_of_interest' not found
-~~~
-{: .error}
+<div class="figure" style="text-align: center">
+<img src="../fig/rmd-unnamed-chunk-4-1.png" alt="plot of chunk unnamed-chunk-4" width="612" />
+<p class="caption">plot of chunk unnamed-chunk-4</p>
+</div>
 
 
 ## What's next?

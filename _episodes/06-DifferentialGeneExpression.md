@@ -69,37 +69,27 @@ culture conditions.
 ~~~
 library(limma)
 design <- model.matrix( ~ gse33146_eset[['culture medium:ch1']])
-~~~
-{: .language-r}
-
-
-
-~~~
-Error in eval(predvars, data, env): object 'gse33146_eset' not found
-~~~
-{: .error}
-
-
-
-~~~
 colnames(design)[2] <- "SCGM"
 ~~~
 {: .language-r}
-
-
-
-~~~
-Error in `colnames<-`(`*tmp*`, value = c(NA, "SCGM")): attempt to set 'colnames' on an object with less than two dimensions
-~~~
-{: .error}
 
 Notice that the design matrix has two columns: one specifiying the _intercept_ and one specifying the change of culture conditions.
 
 
 ~~~
-Error in as.data.frame.default(x): cannot coerce class 'structure("standardGeneric", package = "methods")' to a data.frame
+
+
+| (Intercept)| SCGM|
+|-----------:|----:|
+|           1|    0|
+|           1|    0|
+|           1|    0|
+|           1|    1|
+|           1|    1|
+|           1|    1|
+
 ~~~
-{: .error}
+{: .output}
 
 The `lmFit()` function of limma fits a linear model for every row of our expression matrix. In the case of a two-class comparison, this is equivalent to a simple t-test.
 
@@ -108,13 +98,6 @@ The `lmFit()` function of limma fits a linear model for every row of our express
 fit <- lmFit(gse33146_eset,design)
 ~~~
 {: .language-r}
-
-
-
-~~~
-Error: object 'gse33146_eset' not found
-~~~
-{: .error}
 
 ## Empirical Bayes correction in `limma` 
 
@@ -130,13 +113,6 @@ fitted.ebayes <- eBayes(fit)
 ~~~
 {: .language-r}
 
-
-
-~~~
-Error in eBayes(fit): fit is not a valid MArrayLM object
-~~~
-{: .error}
-
 ## Extracting differentially expressed genes 
 
 We now have, model fits for each feature on the array, and we can arrange them in a table using
@@ -151,9 +127,30 @@ topTable(fitted.ebayes)
 
 
 ~~~
-Error: object 'fitted.ebayes' not found
+Removing intercept from test coefficients
 ~~~
-{: .error}
+{: .output}
+
+
+
+~~~
+
+
+|            |     logFC|   AveExpr|         t| P.Value| adj.P.Val|        B|
+|:-----------|---------:|---------:|---------:|-------:|---------:|--------:|
+|204268_at   | -4.013515| 12.416222| -64.54093|       0|     1e-07| 17.05001|
+|203691_at   | -4.359692|  9.194869| -62.85603|       0|     1e-07| 16.93255|
+|228335_at   |  5.036631|  7.251430|  62.22840|       0|     1e-07| 16.88718|
+|226560_at   | -3.924272|  7.475488| -61.58967|       0|     1e-07| 16.84008|
+|1558846_at  | -3.910434|  6.392854| -61.34606|       0|     1e-07| 16.82186|
+|201820_at   | -5.150011|  9.049732| -61.29092|       0|     1e-07| 16.81772|
+|210809_s_at |  4.309197| 10.827920|  59.60159|       0|     1e-07| 16.68715|
+|204304_s_at | -3.724700|  7.445306| -59.22172|       0|     1e-07| 16.65680|
+|204971_at   | -4.622910|  9.764728| -55.37340|       0|     1e-07| 16.32707|
+|206166_s_at | -4.268026|  6.384286| -55.22246|       0|     1e-07| 16.31326|
+
+~~~
+{: .output}
 
 See how it removed the intercept? In this case, the "SCGM" coefficient is telling us all that we need to know.
 
@@ -168,9 +165,12 @@ summary(decideTests(fitted.ebayes[,"SCGM"],lfc=1))
 
 
 ~~~
-Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'summary': object 'fitted.ebayes' not found
+        SCGM
+Down     633
+NotSig 53460
+Up       582
 ~~~
-{: .error}
+{: .output}
 
 ## Using contrasts
 
@@ -182,54 +182,31 @@ To accomplish this we have to specify *contrasts* within our experimental design
 
 ~~~
 design <- model.matrix( ~ 0 + gse33146_eset[['culture medium:ch1']])
-~~~
-{: .language-r}
-
-
-
-~~~
-Error in eval(predvars, data, env): object 'gse33146_eset' not found
-~~~
-{: .error}
-
-
-
-~~~
 colnames(design) <- levels(as.factor(gse33146_eset[['culture medium:ch1']]))
 ~~~
 {: .language-r}
 
 
-
 ~~~
-Error in h(simpleError(msg, call)): error in evaluating the argument 'x' in selecting a method for function 'levels': error in evaluating the argument 'x' in selecting a method for function 'as.factor': object 'gse33146_eset' not found
-~~~
-{: .error}
 
 
+| MEGM| SCGM|
+|----:|----:|
+|    1|    0|
+|    1|    0|
+|    1|    0|
+|    0|    1|
+|    0|    1|
+|    0|    1|
+
 ~~~
-Error in as.data.frame.default(x): cannot coerce class 'structure("standardGeneric", package = "methods")' to a data.frame
-~~~
-{: .error}
+{: .output}
 
 If we remove the intercept, our coefficients now correspond to the conditions. This seems (to me) more natural, but it creates an extra step: deciding the contrasts between groups. In this case it's easy because there are only two groups. In other cases, we'll have more choices.
 
 
 ~~~
 contrast_matrix <- makeContrasts(SCGM - MEGM, levels=design)
-~~~
-{: .language-r}
-
-
-
-~~~
-Error in if (levels[1] == "(Intercept)") {: argument is of length zero
-~~~
-{: .error}
-
-
-
-~~~
 contrast_matrix
 ~~~
 {: .language-r}
@@ -237,9 +214,12 @@ contrast_matrix
 
 
 ~~~
-Error: object 'contrast_matrix' not found
+      Contrasts
+Levels SCGM - MEGM
+  MEGM          -1
+  SCGM           1
 ~~~
-{: .error}
+{: .output}
 In our contrast matrix, we are interested in finding out the
 difference between the group grown in SCGM (the EMT phenotype) and
 the control (grown in MEGM). For that reason, we used `SCGM-MEGM`, with the latter being the reference. 
@@ -256,47 +236,8 @@ Now we can move ahead to the fit.
 
 ~~~
 fit <- lmFit(gse33146_eset,design)
-~~~
-{: .language-r}
-
-
-
-~~~
-Error: object 'gse33146_eset' not found
-~~~
-{: .error}
-
-
-
-~~~
 fit2 <- contrasts.fit(fit,contrasts=contrast_matrix)
-~~~
-{: .language-r}
-
-
-
-~~~
-Error: object 'contrast_matrix' not found
-~~~
-{: .error}
-
-
-
-~~~
 fit2 <- eBayes(fit2)
-~~~
-{: .language-r}
-
-
-
-~~~
-Error: object 'fit2' not found
-~~~
-{: .error}
-
-
-
-~~~
 summary(decideTests(fit2,lfc=1))
 ~~~
 {: .language-r}
@@ -304,9 +245,12 @@ summary(decideTests(fit2,lfc=1))
 
 
 ~~~
-Error in h(simpleError(msg, call)): error in evaluating the argument 'object' in selecting a method for function 'summary': object 'fit2' not found
+       SCGM - MEGM
+Down           633
+NotSig       53460
+Up             582
 ~~~
-{: .error}
+{: .output}
 
 Notice we found the _exact same_ number of differentially expressed genes, but used the contrasts explicitly in the second case.
 
